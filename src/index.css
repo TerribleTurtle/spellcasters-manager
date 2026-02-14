@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Grimoire Unit Editor Theme - Deep Blue/Purple Magic */
+  --color-background: hsl(224 71% 4%); /* #030712 - Very dark blue */
+  --color-foreground: hsl(210 40% 98%); /* #f8fafc */
+
+  --color-card: hsl(224 71% 7%); /* Slightly lighter than bg */
+  --color-card-foreground: hsl(210 40% 98%);
+
+  --color-popover: hsl(224 71% 4%);
+  --color-popover-foreground: hsl(210 40% 98%);
+
+  --color-primary: hsl(243 75% 59%); /* #6366f1 - Indigo/Violet */
+  --color-primary-foreground: hsl(210 40% 98%);
+
+  --color-secondary: hsl(217 33% 17%); /* Dark blue-grey */
+  --color-secondary-foreground: hsl(210 40% 98%);
+
+  --color-muted: hsl(217 33% 12%); 
+  --color-muted-foreground: hsl(215 20% 65%);
+
+  --color-accent: hsl(250 50% 15%); /* Deep purple accent */
+  --color-accent-foreground: hsl(210 40% 98%);
+
+  --color-destructive: hsl(0 62% 30%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+
+  --color-border: hsl(217 33% 20%);
+  --color-input: hsl(217 33% 17%);
+  --color-ring: hsl(243 75% 59%);
+
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+  
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+}
+
+/* Custom Utilities that can't be automatically upgraded yet or use complex selectors */
+@utility custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: hsl(var(--color-border));
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--color-muted-foreground));
+  }
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--color-border)) transparent;
+}
+
+/* Set base styles that rely on the theme variables */
+@layer base {
+  :root {
+    --background: var(--color-background);
+    --foreground: var(--color-foreground);
+    --card: var(--color-card);
+    --card-foreground: var(--color-card-foreground);
+    --popover: var(--color-popover);
+    --popover-foreground: var(--color-popover-foreground);
+    --primary: var(--color-primary);
+    --primary-foreground: var(--color-primary-foreground);
+    --secondary: var(--color-secondary);
+    --secondary-foreground: var(--color-secondary-foreground);
+    --muted: var(--color-muted);
+    --muted-foreground: var(--color-muted-foreground);
+    --accent: var(--color-accent);
+    --accent-foreground: var(--color-accent-foreground);
+    --destructive: var(--color-destructive);
+    --destructive-foreground: var(--color-destructive-foreground);
+    --border: var(--color-border);
+    --input: var(--color-input);
+    --ring: var(--color-ring);
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+ 
+
+
+

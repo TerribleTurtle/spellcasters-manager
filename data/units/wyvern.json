@@ -1,0 +1,40 @@
+{
+  "$schema": "../../schemas/v2/units.schema.json",
+  "entity_id": "wyvern",
+  "name": "Wyvern",
+  "category": "Creature",
+  "magic_school": "Wild",
+  "rank": "II",
+  "description": "Flying dragonkin that attacks with mid-range projectiles.",
+  "image_required": true,
+  "tags": [],
+  "changelog": [
+    {
+      "version": "0.0.1",
+      "date": "2026-02-08T09:49:16.842389+00:00",
+      "description": "Initial Closed Beta 2 Data"
+    }
+  ],
+  "damage": 19,
+  "mechanics": {
+    "damage_modifiers": [
+      {
+        "multiplier": 0.9,
+        "condition": "Always",
+        "target_types": [
+          "Building"
+        ]
+      }
+    ]
+  },
+  "health": 220,
+  "movement_speed": 7,
+  "movement_type": "Flying",
+  "range": 36,
+  "dps": 19,
+  "attack_interval": 1.0,
+  "charges": 1,
+  "recharge_time": 10,
+  "cast_time": 0,
+  "population": 0
+}

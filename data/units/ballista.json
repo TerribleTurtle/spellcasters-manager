@@ -1,0 +1,27 @@
+{
+  "$schema": "../../schemas/v2/units.schema.json",
+  "entity_id": "ballista",
+  "name": "Ballista",
+  "category": "Building",
+  "magic_school": "Technomancy",
+  "rank": "II",
+  "description": "Static weapon that targets enemies at long range.",
+  "image_required": true,
+  "tags": [],
+  "changelog": [
+    {
+      "version": "0.0.1",
+      "date": "2026-02-08T09:49:16.840179+00:00",
+      "description": "Initial Closed Beta 2 Data"
+    }
+  ],
+  "damage": 25,
+  "health": 300,
+  "range": 80,
+  "dps": 25,
+  "attack_interval": 1.0,
+  "charges": 1,
+  "recharge_time": 10.0,
+  "cast_time": 0.0,
+  "population": 0
+}

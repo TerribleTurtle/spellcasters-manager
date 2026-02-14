@@ -1,0 +1,29 @@
+{
+  "$schema": "../../schemas/v2/units.schema.json",
+  "entity_id": "faerie",
+  "name": "Faerie",
+  "category": "Creature",
+  "magic_school": "Astral",
+  "rank": "I",
+  "description": "Stealthy flying ranged creature that turns invisible out of combat.",
+  "image_required": true,
+  "tags": [],
+  "changelog": [
+    {
+      "version": "0.0.1",
+      "date": "2026-02-08T09:49:16.836151+00:00",
+      "description": "Initial Closed Beta 2 Data"
+    }
+  ],
+  "damage": 9,
+  "health": 100,
+  "range": 25,
+  "movement_speed": 3,
+  "movement_type": "Flying",
+  "dps": 9,
+  "attack_interval": 1.0,
+  "charges": 1,
+  "recharge_time": 10.0,
+  "cast_time": 0.0,
+  "population": 0
+}
