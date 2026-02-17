@@ -99,42 +99,28 @@ function ChangeValue({ change }: { change: Diff<any, any> }) {
     const category = getChangeCategory(change);
     const isDimmed = category !== 'USER';
 
-    const Badge = () => {
-        if (category === 'USER') return <span className="text-micro font-bold bg-primary/20 text-primary px-1 rounded mr-1.5 align-middle">USER</span>;
-        if (category === 'SCHEMA') return <span className="text-micro font-mono border border-border/50 text-muted-foreground px-1 rounded mr-1.5 align-middle opacity-70">DEF</span>;
-        return <span className="text-micro font-mono bg-muted text-muted-foreground px-1 rounded mr-1.5 align-middle opacity-50">SYS</span>;
-    };
-
-    // Wrapper for dimming
-    const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <span className={cn("flex-1", isDimmed && "opacity-60 grayscale-[0.5]")}>
-            <Badge />
-            {children}
-        </span>
-    );
-
     // N - New, D - Deleted, E - Edited, A - Array
     switch(change.kind) {
         case 'N': // New
-            return <Wrapper><span className="text-green-500">{JSON.stringify(change.rhs)}</span></Wrapper>;
+            return <ChangeWrapper isDimmed={isDimmed} category={category}><span className="text-green-500">{JSON.stringify(change.rhs)}</span></ChangeWrapper>;
         case 'D': // Deleted
-            return <Wrapper><span className="text-red-500 line-through decoration-red-500/50">{JSON.stringify(change.lhs)}</span></Wrapper>;
+            return <ChangeWrapper isDimmed={isDimmed} category={category}><span className="text-red-500 line-through decoration-red-500/50">{JSON.stringify(change.lhs)}</span></ChangeWrapper>;
         case 'E': // Edited
             return (
-                <Wrapper>
+                <ChangeWrapper isDimmed={isDimmed} category={category}>
                     <span className="inline-flex items-center gap-1 flex-wrap">
                         <span className="text-red-400 line-through decoration-red-400/50 opacity-80">{JSON.stringify(change.lhs)}</span>
                         <ArrowRight className="w-3 h-3 text-muted-foreground/40" />
                         <span className="text-green-500">{JSON.stringify(change.rhs)}</span>
                     </span>
-                </Wrapper>
+                </ChangeWrapper>
             );
         case 'A': // Array Change
             return (
                 <div className="ml-2 pl-2 border-l-2 border-orange-500/20">
                      <div className="flex items-center gap-2 mb-1">
                         <span className="text-orange-500 text-mini uppercase font-bold tracking-wider">Array [{change.index}]</span>
-                        <Badge />
+                        <CategoryBadge category={category} />
                      </div>
                     <ChangeValue change={change.item} />
                 </div>
@@ -142,4 +128,19 @@ function ChangeValue({ change }: { change: Diff<any, any> }) {
         default:
             return <span>Unknown Change</span>;
     }
+}
+
+function CategoryBadge({ category }: { category: ChangeCategory }) {
+    if (category === 'USER') return <span className="text-micro font-bold bg-primary/20 text-primary px-1 rounded mr-1.5 align-middle">USER</span>;
+    if (category === 'SCHEMA') return <span className="text-micro font-mono border border-border/50 text-muted-foreground px-1 rounded mr-1.5 align-middle opacity-70">DEF</span>;
+    return <span className="text-micro font-mono bg-muted text-muted-foreground px-1 rounded mr-1.5 align-middle opacity-50">SYS</span>;
+}
+
+function ChangeWrapper({ children, isDimmed, category }: { children: React.ReactNode; isDimmed: boolean; category: ChangeCategory }) {
+    return (
+        <span className={cn("flex-1", isDimmed && "opacity-60 grayscale-[0.5]")}>
+            <CategoryBadge category={category} />
+            {children}
+        </span>
+    );
 }

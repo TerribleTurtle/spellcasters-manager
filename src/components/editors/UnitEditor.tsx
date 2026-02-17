@@ -43,7 +43,7 @@ interface UnitEditorProps {
   onDirtyChange?: (dirty: boolean) => void;
 
   isNew?: boolean;
-  onDuplicate?: (data: any) => void;
+  onDuplicate?: (data: UnitFormValues) => void;
 }
 
 
@@ -65,13 +65,13 @@ export function UnitEditor({ initialData, filename, mode, onSave, onNavigateToSc
     const data = { ...initialData } as UnitFormValues;
     // Auto-infer icon if missing
     if (!data.icon) {
-       const category = (initialData as any)._category || 'units';
+       const category = (initialData as unknown as { _category?: string })._category || 'units';
        data.icon = `${category}/${filename.replace('.json', '.png')}`;
     }
     return data;
   }, [initialData, filename]);
 
-  const form = useForm<any>({
+  const form = useForm<UnitFormValues>({
     resolver: zodResolver(UnitSchema) as any,
     defaultValues: normalizedInitial || {
       id: newUnitId,
@@ -112,15 +112,15 @@ export function UnitEditor({ initialData, filename, mode, onSave, onNavigateToSc
       ? watchedName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + ".json" 
       : filename;
 
-  const handleSilentSaveAction = (data: any) => {
+  const handleSilentSaveAction = (data: UnitFormValues) => {
       handleSilentSave(data, isNew ? generatedFilename : undefined);
   };
 
-  const handleSaveAction = (data: any, tag: string) => {
+  const handleSaveAction = (data: UnitFormValues, tag: string) => {
       handleQuickSave(data, tag, isNew ? generatedFilename : undefined, reason || undefined);
   };
 
-  const handleQueueAction = (data: any) => {
+  const handleQueueAction = (data: UnitFormValues) => {
       handleAddToQueue(data, isNew ? generatedFilename : undefined);
   };
 
@@ -252,7 +252,7 @@ export function UnitEditor({ initialData, filename, mode, onSave, onNavigateToSc
                 entityId={filename.replace('.json', '')}
                 mode={mode}
                 onRetcon={(field, oldValue) => {
-                  form.setValue(field, oldValue, { shouldDirty: true });
+                  form.setValue(field as keyof UnitFormValues, oldValue as any, { shouldDirty: true });
                   setEditorTab('edit');
                 }}
               />

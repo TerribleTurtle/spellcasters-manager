@@ -55,13 +55,21 @@ describe('GitService', () => {
         });
     });
 
-    it('commitPatch commits changes', async () => {
+    it('commitPatch commits only the data directory', async () => {
         const service = new GitService('root');
         const patch = { id: 'p1', version: '1.0', title: 'Test Patch' } as any;
+        const filesToStage = [
+            'data/patches.json',
+            'data/units/archer.json'
+        ];
 
-        await service.commitPatch('data', patch, 'Test Commit');
+        await service.commitPatch('data', patch, 'Test Commit', filesToStage);
 
-        expect(mocks.add).toHaveBeenCalledWith('.');
-        expect(mocks.commit).toHaveBeenCalledWith('Test Commit');
+        // Should stage repo-relative paths for each file, not '.'
+        expect(mocks.add).toHaveBeenCalledWith([
+            'data/patches.json',
+            'data/units/archer.json'
+        ]);
+        expect(mocks.commit).toHaveBeenCalledWith('Test Commit', { '--allow-empty': null });
     });
 });

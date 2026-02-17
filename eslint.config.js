@@ -20,4 +20,23 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // Server files need Node.js globals
+  {
+    files: ['server/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  // Tests: relax any/ts-comment rules (mocking requires flexible types)
+  {
+    files: ['tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
 ])

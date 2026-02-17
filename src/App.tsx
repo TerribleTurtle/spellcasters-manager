@@ -26,9 +26,11 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('category') || 'all';
   });
-  const [registry, setRegistry] = useState<Record<string, any[]>>({}); 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [registry, setRegistry] = useState<Record<string, any[]>>({});
   const [items, setItems] = useState<EntityListHash[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [unitData, setUnitData] = useState<any | null>(null)
   const [view, setView] = useState<AppView>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -108,6 +110,7 @@ function App() {
             const [unitsRes, heroesRes, consumablesRes, spellsRes, titansRes] = results;
             
             // Helper to extract data or log error
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const getResult = (res: PromiseSettledResult<any>, label: string) => {
                 if (res.status === 'fulfilled') return res.value;
                 console.error(`Failed to load ${label}:`, res.reason);
@@ -131,6 +134,7 @@ function App() {
     const allItems: EntityListHash[] = [];
 
     // Mapping: UI Tab ID -> Filter Predicate
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const CATEGORY_MAP: Record<string, (folder: string, entity: any) => boolean> = {
         'all': () => true,
         'hero': (folder) => folder === 'heroes',
@@ -180,7 +184,7 @@ function App() {
     fetchData();
     fetchQueue();
     checkHealth();
-  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchData, fetchQueue, checkHealth, mode]);
 
   // --- Callbacks ---
   const handleSelectUnit = useCallback((filename: string) => {
@@ -201,6 +205,7 @@ function App() {
     });
   }, [handleNavigation]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDuplicate = useCallback((data: any) => {
       handleNavigation(() => {
           // Enter creation mode with pre-filled data
@@ -242,7 +247,7 @@ function App() {
         setSelectedUnit(filename);
       });
     }
-  }, []);
+  }, [handleNavigation]);
 
   if (isLoading && Object.keys(registry).length === 0) {
       return (

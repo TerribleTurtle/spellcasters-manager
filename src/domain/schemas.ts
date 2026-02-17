@@ -149,6 +149,7 @@ export const PatchSchema = z.object({
   date: z.string(),
   tags: z.array(z.string()).optional(),
   changes: z.array(ChangeSchema),
+  diff: z.string().optional(),
 });
 export type Patch = z.infer<typeof PatchSchema>;
 

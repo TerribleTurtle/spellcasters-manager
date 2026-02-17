@@ -1,0 +1,158 @@
+
+> spellcasters-manager@0.1.0 lint
+> eslint .
+
+
+C:\Projects\spellcasters-manager\src\components\editors\ConsumableEditor.tsx
+  119:23  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Projects\spellcasters-manager\src\components\editors\ConsumableEditor.tsx:119:23
+  117 |
+  118 |   // Dynamic filename for creation
+> 119 |   const watchedName = form.watch("name");
+      |                       ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  120 |   const generatedFilename = isNew && watchedName 
+  121 |       ? watchedName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + ".json" 
+  122 |       : filename;  react-hooks/incompatible-library
+  124:41  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  128:35  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+  132:36  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\editors\HeroEditor.tsx
+   76:34  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+   77:25  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+   87:44  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+  156:23  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Projects\spellcasters-manager\src\components\editors\HeroEditor.tsx:156:23
+  154 |
+  155 |   // Dynamic filename for creation
+> 156 |   const watchedName = form.watch("name");
+      |                       ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  157 |   const generatedFilename = isNew && watchedName 
+  158 |       ? watchedName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + ".json" 
+  159 |       : filename;  react-hooks/incompatible-library
+  161:41  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+  165:35  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+  169:36  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\editors\TableEditor.tsx
+  25:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  26:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:76  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  33:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\editors\UnitEditor.tsx
+  111:23  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Projects\spellcasters-manager\src\components\editors\UnitEditor.tsx:111:23
+  109 |   
+  110 |   // Dynamic filename for creation
+> 111 |   const watchedName = form.watch("name");
+      |                       ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  112 |   const generatedFilename = isNew && watchedName 
+  113 |       ? watchedName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + ".json" 
+  114 |       : filename;  react-hooks/incompatible-library
+  116:41  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  120:35  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+  124:36  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\editors\dialogs\AssetPicker.tsx
+  40:14  error  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Projects\spellcasters-manager\src\components\editors\dialogs\SavePreviewDialog.tsx
+  21:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  22:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\editors\panels\EntityHistoryPanel.tsx
+   12:8   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   13:8   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   24:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   39:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   41:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  206:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\editors\panels\HeroAbilitiesPanel.tsx
+  11:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  86:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\editors\panels\UnitHeaderPanel.tsx
+  9:105  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\forge\ForgePage.tsx
+  13:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  22:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\grimoire\EntityList.tsx
+  53:28  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Projects\spellcasters-manager\src\components\grimoire\EntityList.tsx:53:28
+  51 |     const parentRef = useRef<HTMLDivElement>(null);
+  52 |
+> 53 |     const rowVirtualizer = useVirtualizer({
+     |                            ^^^^^^^^^^^^^^ TanStack Virtual's `useVirtualizer()` API returns functions that cannot be memoized safely
+  54 |         count: filteredItems.length,
+  55 |         getScrollElement: () => parentRef.current,
+  56 |         estimateSize: () => 60, // increased height to prevent overlap  react-hooks/incompatible-library
+  84:77  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\layout\AppSidebar.tsx
+  59:18  error  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Projects\spellcasters-manager\src\components\preview\PreviewDetailPage.tsx
+   46:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  145:81  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  148:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\preview\PreviewPanel.tsx
+  8:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\preview\SitePreview.tsx
+  26:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  36:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\scribe\DiffCard.tsx
+   59:18  error  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+   75:18  error  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+   93:18  error  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+  117:18  error  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+  130:18  error  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Projects\spellcasters-manager\src\components\scribe\HistoryGrid.tsx
+  56:18  error  'err' is defined but never used  @typescript-eslint/no-unused-vars
+  83:18  error  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Projects\spellcasters-manager\src\components\scribe\ScribePanel.tsx
+   71:14  error  '_err' is defined but never used  @typescript-eslint/no-unused-vars
+  110:16  error  'err' is defined but never used   @typescript-eslint/no-unused-vars
+  158:14  error  'err' is defined but never used   @typescript-eslint/no-unused-vars
+
+C:\Projects\spellcasters-manager\src\components\ui\JsonDiff.tsx
+  7:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  8:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Projects\spellcasters-manager\src\components\ui\TagSelect.tsx
+  30:3  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+C:\Projects\spellcasters-manager\src\components\ui\button.tsx
+  57:18  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Projects\spellcasters-manager\src\components\ui\form.tsx
+  170:3  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Projects\spellcasters-manager\src\components\ui\toast-context.tsx
+  87:17  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+✖ 60 problems (55 errors, 5 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

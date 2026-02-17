@@ -44,7 +44,7 @@ interface HeroEditorProps {
   onDirtyChange?: (dirty: boolean) => void;
 
   isNew?: boolean;
-  onDuplicate?: (data: any) => void;
+  onDuplicate?: (data: HeroFormValues) => void;
 }
 
 
@@ -62,38 +62,39 @@ export function HeroEditor({ initialData, filename, mode, onSave, onNavigateToSc
   // Normalize data BEFORE creating the form to prevent first-render flicker
   const normalizedInitial = useMemo(() => {
     if (!initialData) return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = { ...initialData } as any;
+    if (!initialData) return null;
+    const data = { ...initialData } as HeroFormValues & { _category?: string, class?: string, hero_class?: string };
 
     // 1. Normalize Class
     if (data.class && !data.hero_class) {
-      data.hero_class = data.class;
+      data.hero_class = data.class as any;
     }
 
     // 2. Normalize Abilities (Object -> Array)
     if (data.abilities && !Array.isArray(data.abilities)) {
-      const normalizedAbilities: any[] = [];
+      const rawAbilities = data.abilities as any;
+      const normalizedAbilities: HeroFormValues['abilities'] = [];
       const add = (def: any, type: string) => {
         if (!def) return;
         normalizedAbilities.push({
           ...def,
-          type,
+          type: type as any,
           mana_cost: def.mana_cost || 0,
           cooldown: def.cooldown || 0
         });
       };
-      if (Array.isArray(data.abilities.passive)) {
-        data.abilities.passive.forEach((p: any) => add(p, 'Passive'));
+      if (Array.isArray(rawAbilities.passive)) {
+        rawAbilities.passive.forEach((p: any) => add(p, 'Passive'));
       }
-      add(data.abilities.primary, 'Primary');
-      add(data.abilities.defense, 'Defense');
-      add(data.abilities.ultimate, 'Ultimate');
+      add(rawAbilities.primary, 'Primary');
+      add(rawAbilities.defense, 'Defense');
+      add(rawAbilities.ultimate, 'Ultimate');
       data.abilities = normalizedAbilities;
     }
 
     // Auto-infer icon if missing
     if (!data.icon) {
-      const category = (initialData as any)._category || 'heroes';
+      const category = (initialData as unknown as { _category?: string })._category || 'heroes';
       data.icon = `${category}/${filename.replace('.json', '.png')}`;
     }
 
@@ -156,15 +157,15 @@ export function HeroEditor({ initialData, filename, mode, onSave, onNavigateToSc
       ? watchedName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + ".json" 
       : filename;
 
-  const handleSilentSaveAction = (data: any) => {
+  const handleSilentSaveAction = (data: HeroFormValues) => {
       handleSilentSave(data, isNew ? generatedFilename : undefined);
   };
 
-  const handleSaveAction = (data: any, tag: string) => {
+  const handleSaveAction = (data: HeroFormValues, tag: string) => {
       handleQuickSave(data, tag, isNew ? generatedFilename : undefined, reason || undefined);
   };
 
-  const handleQueueAction = (data: any) => {
+  const handleQueueAction = (data: HeroFormValues) => {
       handleAddToQueue(data, isNew ? generatedFilename : undefined);
   };
 
@@ -300,9 +301,8 @@ export function HeroEditor({ initialData, filename, mode, onSave, onNavigateToSc
               <EntityHistoryPanel
                 entityId={filename.replace('.json', '')}
                 mode={mode}
-                onRetcon={(field, oldValue) => {
-                  // @ts-ignore
-                  form.setValue(field, oldValue, { shouldDirty: true });
+                 onRetcon={(field, oldValue) => {
+                  form.setValue(field as keyof HeroFormValues, oldValue as any, { shouldDirty: true });
                   setEditorTab('edit');
                 }}
               />

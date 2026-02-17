@@ -1,7 +1,6 @@
 
 import { Request, Response } from 'express';
 import path from 'path';
-import fs from 'fs';
 import { fileService } from '../services/fileService.js';
 import { UnitSchema, HeroSchema, ConsumableSchema, Change } from '../../src/domain/schemas.js';
 import { logger } from '../utils/logger.js';
@@ -251,13 +250,12 @@ export const resetDevData = async (req: Request, res: Response) => {
         const { mode } = req.context;
         
         // Security check: Only allow in 'dev' app mode
-        // In a real app, this should also check user permissions
+        if (mode !== 'dev') {
+             return res.status(403).json({ error: "Reset is only allowed in dev mode" });
+        }
         if (process.env.NODE_ENV === 'production') {
              return res.status(403).json({ error: "Cannot reset data in production environment" });
         }
-
-
-
         // We'll trust the sync script to do the heavy lifting
         // Using execFile is safer than exec (no shell interpretation)
         const { execFile } = await import('child_process');
@@ -291,7 +289,7 @@ export const saveBatch = async (req: Request, res: Response) => {
     const { category } = req.params as { category: string };
     const { dataDir } = req.context;
     
-    // updates is an array of { filename: string, data: any }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updates = req.body as { filename: string; data: any }[];
 
     if (!Array.isArray(updates)) {
@@ -416,7 +414,7 @@ export const importData = async (req: Request, res: Response) => {
     const resolvedDataDir = path.resolve(dataDir);
     
     // Expect generic JSON body
-    const { meta, data } = req.body;
+    const { data } = req.body;
 
     if (!data || typeof data !== 'object') {
         res.status(400).json({ error: "Invalid backup format: missing 'data' object" });

@@ -61,6 +61,8 @@ The **History** tab in the Patch Manager shows all published patches. Filter by 
 ## Safety & Reliability
 
 - **Backups**: Every patch commit triggers a full backup of `data/` to `data/backups/`.
+- **Reset Safety**: "Reset Dev Data" creates a snapshot backup in `root/backups/` before wiping, and resets git state.
+- **Live Lock**: The system refuses to write to live data paths unless strictly in Live Mode, preventing accidental resets.
 - **Audit Logs**: Critical actions (save, queue, commit, rollback) are logged to `data/audit.jsonl`.
 - **Health Check**: The header displays system health and version.
 - **Validation**: Strict schema validation with instant UI feedback ensures data integrity.
@@ -138,10 +140,10 @@ The test suite covers:
 
 ## Data Management
 
-| Command                   | Action                       | When to use                         |
-| ------------------------- | ---------------------------- | ----------------------------------- |
-| `npm run sync-data`       | **Merge** Live data into Dev | Update local env without losing WIP |
-| `npm run sync-data:clean` | **Wipe & Replace**           | Reset environment to match Live     |
+| Command                   | Action                       | When to use                                        |
+| ------------------------- | ---------------------------- | -------------------------------------------------- |
+| `npm run sync-data`       | **Merge** Live data into Dev | Update local env without losing WIP                |
+| `npm run sync-data:clean` | **Wipe & Replace** (Safe)    | Reset to match Live (Auto-backs up dev data first) |
 
 ## License
 

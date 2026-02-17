@@ -21,6 +21,18 @@ interface PreviewDetailPageProps {
   mode: AppMode;
 }
 
+// Stat Grid Item
+function StatItem({ label, value, icon: Icon, colorClass }: { label: string; value: string | number | undefined; icon: React.ComponentType<{ className?: string }>; colorClass?: string }) {
+  const displayValue = value !== undefined && value !== null ? value : "-";
+  return (
+    <div className="bg-slate-800/50 rounded-xl p-3 flex flex-col items-center justify-center gap-1 border border-white/5 shadow-sm">
+        <Icon className={`w-5 h-5 ${colorClass || "text-slate-400"}`} />
+        <span className="text-xl font-bold text-white tracking-tight">{displayValue}</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{label}</span>
+    </div>
+  );
+}
+
 export function PreviewDetailPage({ data, mode }: PreviewDetailPageProps) {
   const theme = getSchoolTheme(data.magic_school);
   
@@ -31,19 +43,11 @@ export function PreviewDetailPage({ data, mode }: PreviewDetailPageProps) {
   const category = data.category || "Unit";
   
   // Format changelog if present
-  const changelog = (data.changelog || []) as any[];
+  const changelog = (data.changelog || []) as Array<{ version: string; date?: string; description?: string; title?: string }>;
 
-  // Helper for stats
-  const statVal = (val?: number | string) => val !== undefined && val !== null ? val : "-";
 
-  // Stat Grid Item
-  const StatItem = ({ label, value, icon: Icon, colorClass }: { label: string; value: string | number | undefined; icon: any; colorClass?: string }) => (
-    <div className="bg-slate-800/50 rounded-xl p-3 flex flex-col items-center justify-center gap-1 border border-white/5 shadow-sm">
-        <Icon className={`w-5 h-5 ${colorClass || "text-slate-400"}`} />
-        <span className="text-xl font-bold text-white tracking-tight">{statVal(value)}</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</span>
-    </div>
-  );
+
+
 
   // Movement Icon logic
   const MoveIcon = data.movement_type === 'Flying' ? Ghost : data.movement_type === 'Hover' ? Wind : Footprints;
@@ -138,10 +142,10 @@ export function PreviewDetailPage({ data, mode }: PreviewDetailPageProps) {
                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Mechanics</h3>
                  <div className="space-y-2">
                     {/* Render arbitrary mechanics */}
-                    {Object.entries(data.mechanics).map(([key, value]: [string, any]) => {
+                    {Object.entries(data.mechanics).map(([key, value]) => {
                          // Attempt to format known mechanic shapes or just dump
                          if (key === 'damage_modifiers' && Array.isArray(value)) {
-                             return value.map((mod: any, idx: number) => (
+                             return (value as Array<{ multiplier: number; target_types?: string[] }>).map((mod, idx) => (
                                 <div key={idx} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-3">
                                     <div className="p-1.5 bg-red-500/20 rounded-full">
                                         <Sword className="w-3.5 h-3.5 text-red-400" />

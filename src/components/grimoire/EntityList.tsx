@@ -50,6 +50,7 @@ export function EntityList({ items, selectedUnit, onSelectUnit, isLoading = fals
 
     const parentRef = useRef<HTMLDivElement>(null);
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
         count: filteredItems.length,
         getScrollElement: () => parentRef.current,
@@ -81,7 +82,7 @@ export function EntityList({ items, selectedUnit, onSelectUnit, isLoading = fals
                         />
                     </div>
                     
-                    <Select value={sort} onValueChange={(v) => setSort(v as any)}>
+                    <Select value={sort} onValueChange={(v) => setSort(v as 'smart' | 'alpha' | 'alpha-desc')}>
                         <SelectTrigger className="w-[40px] px-0 justify-center text-muted-foreground hover:text-foreground bg-secondary/30 h-9">
                             <ArrowUpDown className="w-4 h-4" />
                         </SelectTrigger>

@@ -58,6 +58,12 @@
 - [x] Data Flow Optimization: Atomic writes, Bulk loading (N+1→5 requests), Promise.allSettled error resilience
 - [x] Security Audit: "Triton" scan passed, dependencies clean, no secrets leaked.
 - [x] Security Hardening: Multer sanitization, importData guards, execFile implementation.
+- [x] Scoped Git Commits: `commitPatch` now stages only the exact files modified, not the whole directory or repo.
+- [x] Final Cleanup (cleanup-5): Lint 183→97 (remaining = UI lib patterns), removed unused imports/vars, ESLint test overrides, README verified.
+- [x] Reset Dev Data: Backup before wipe, git state reset, live-data guards, patch_tags in history, git diff capture in patches.
+- [x] Build Fix (Critical): Fixed `useCallback` runtime error in ScribePanel/HistoryGrid and `zodResolver` type mismatch in Editors.
+- [x] Final Audit (/cleanup-5): Verified tests (98/98), fixed lint errors, updated README.md with new safety features.
+- [x] CONTRIBUTOR_GUIDE.md: Zero-to-PR beginner guide for community contributors (Node.js + Git only, no Python).
 
 ### Planned
 

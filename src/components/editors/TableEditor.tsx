@@ -1,4 +1,4 @@
-import { Control, useWatch } from "react-hook-form";
+import { Control, useWatch, FieldValues, Path } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,17 +20,17 @@ export interface EditorField {
   description?: string;
 }
 
-interface TableEditorProps {
+interface TableEditorProps<TFieldValues extends FieldValues> {
   fields: EditorField[];
-  control: Control<any>;
-  initialData: any;
+  control: Control<TFieldValues>;
+  initialData: TFieldValues | null;
 }
 
 type RowStatus = "clean" | "modified" | "schema-missing";
 
-function getRowStatus(_fieldName: string, initialValue: any, currentValue: any): RowStatus {
+function getRowStatus(initialValue: unknown, currentValue: unknown): RowStatus {
   // Normalize empty values to null for comparison
-  const normalize = (v: any) => (v === undefined || v === null || v === "") ? null : v;
+  const normalize = (v: unknown) => (v === undefined || v === null || v === "") ? null : v;
   
   const v1 = normalize(initialValue);
   const v2 = normalize(currentValue);
@@ -78,7 +78,7 @@ const STATUS_STYLES: Record<RowStatus, { input: string; badge: string; badgeText
   },
 };
 
-export function TableEditor({ fields, control, initialData }: TableEditorProps) {
+export function TableEditor<TFieldValues extends FieldValues>({ fields, control, initialData }: TableEditorProps<TFieldValues>) {
   // Watch all fields to detect changes against initialData
   const formValues = useWatch({ control });
   const [showAll, setShowAll] = useState(false);
@@ -108,8 +108,8 @@ export function TableEditor({ fields, control, initialData }: TableEditorProps) 
   // Count statuses for legend
   const statusCounts = { modified: 0, "schema-missing": 0 };
   fields.forEach(field => {
-    const status = getRowStatus(field.name, initialData?.[field.name], formValues?.[field.name]);
-    if (status !== "clean") statusCounts[status]++;
+    const status = getRowStatus(initialData?.[field.name as keyof TFieldValues], (formValues as any)?.[field.name]);
+    if (status !== "clean") statusCounts[status as keyof typeof statusCounts]++;
   });
 
   return (
@@ -117,9 +117,9 @@ export function TableEditor({ fields, control, initialData }: TableEditorProps) 
       {/* Two-column grid layout */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         {visibleFields.map((field) => {
-          const currentValue = initialData?.[field.name];
-          const newValue = formValues?.[field.name];
-          const status = getRowStatus(field.name, currentValue, newValue);
+          const currentValue = initialData?.[field.name as keyof TFieldValues];
+          const newValue = (formValues as any)?.[field.name];
+          const status = getRowStatus(currentValue, newValue);
           const styles = STATUS_STYLES[status];
 
           return (
@@ -152,7 +152,7 @@ export function TableEditor({ fields, control, initialData }: TableEditorProps) 
 
               <FormField
                   control={control}
-                  name={field.name}
+                  name={field.name as Path<TFieldValues>}
                   render={({ field: formField }) => (
                     <FormItem className="space-y-0 w-full">
                         <div className="flex items-center gap-2">

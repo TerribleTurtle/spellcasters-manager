@@ -37,8 +37,7 @@ export function AssetPicker({ open, onOpenChange, onSelect, mode }: AssetPickerP
       const { filename } = await assetService.upload(file, file.name, mode);
       success(`Uploaded ${filename}`);
       refresh();
-    } catch (_err) {
-
+    } catch {
       error("Failed to upload asset");
     }
 

@@ -44,7 +44,7 @@ interface ConsumableEditorProps {
   onDirtyChange?: (dirty: boolean) => void;
 
   isNew?: boolean;
-  onDuplicate?: (data: any) => void;
+  onDuplicate?: (data: ConsumableFormValues) => void;
 }
 
 const CONSUMABLE_FIELDS = schemaToFields(ConsumableSchema, CONSUMABLE_FIELD_CONFIG);
@@ -65,7 +65,7 @@ export function ConsumableEditor({ initialData, filename, mode, onSave, onNaviga
     // Auto-infer icon if missing
     if (!data.icon) {
        const namePart = filename.replace('.json', '').toLowerCase().replace(/\s+/g, '_');
-       const category = (initialData as any)._category || 'consumables';
+       const category = (initialData as unknown as { _category?: string })._category || 'consumables';
        data.icon = `${category}/${namePart}.png`;
     }
     return data;
@@ -120,15 +120,15 @@ export function ConsumableEditor({ initialData, filename, mode, onSave, onNaviga
       ? watchedName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') + ".json" 
       : filename;
 
-  const handleSilentSaveAction = (data: any) => {
+  const handleSilentSaveAction = (data: ConsumableFormValues) => {
       handleSilentSave(data, isNew ? generatedFilename : undefined);
   };
 
-  const handleSaveAction = (data: any, tag: string) => {
+  const handleSaveAction = (data: ConsumableFormValues, tag: string) => {
       handleQuickSave(data, tag, isNew ? generatedFilename : undefined, reason || undefined);
   };
 
-  const handleQueueAction = (data: any) => {
+  const handleQueueAction = (data: ConsumableFormValues) => {
       handleAddToQueue(data, isNew ? generatedFilename : undefined);
   };
 
@@ -259,7 +259,7 @@ export function ConsumableEditor({ initialData, filename, mode, onSave, onNaviga
                 entityId={filename.replace('.json', '')}
                 mode={mode}
                 onRetcon={(field, oldValue) => {
-                  form.setValue(field as any, oldValue, { shouldDirty: true });
+                  form.setValue(field as keyof ConsumableFormValues, oldValue as any, { shouldDirty: true });
                   setEditorTab('edit');
                 }}
               />

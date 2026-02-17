@@ -5,11 +5,11 @@ import express, { Express } from 'express';
 import { commitPatch } from '../../server/controllers/patchController';
 import { addToQueue, getQueue } from '../../server/controllers/queueController';
 import { fileService } from '../../server/services/fileService';
-import { GitService } from '../../server/services/gitService';
 
 // Mock Dependencies
 const mocks = vi.hoisted(() => ({
-    commitPatch: vi.fn()
+    commitPatch: vi.fn(),
+    getStagedDiff: vi.fn().mockResolvedValue('')
 }));
 
 vi.mock('../../server/services/fileService');
@@ -17,9 +17,11 @@ vi.mock('../../server/services/gitService', () => {
     return {
         GitService: class {
             commitPatch = mocks.commitPatch;
+            getStagedDiff = mocks.getStagedDiff;
         },
         gitService: {
-            commitPatch: mocks.commitPatch
+            commitPatch: mocks.commitPatch,
+            getStagedDiff: mocks.getStagedDiff
         }
     };
 });

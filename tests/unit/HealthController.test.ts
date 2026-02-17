@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as HealthController from '../../server/controllers/healthController';
 import { createMockRequest, MockRequest } from '../helpers/mockRequest';
 import { Response } from 'express';
-import fs from 'fs';
 
 const { mockAccess, mockExistsSync, mockReadFileSync } = vi.hoisted(() => {
     return {

@@ -16,7 +16,7 @@ export const getHealth = async (req: Request, res: Response) => {
                 const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
                 version = pkg.version || 'unknown';
             }
-        } catch (e) {
+        } catch {
             // ignore
         }
 

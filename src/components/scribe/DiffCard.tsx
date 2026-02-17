@@ -56,7 +56,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
             setTagInput("");
             if (onUpdate) onUpdate();
             success("Tag added");
-        } catch (err) {
+        } catch {
             error("Failed to update tags");
         }
     };
@@ -72,7 +72,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
             await patchService.updateQueueItem(mode, index, updatedChange);
             if (onUpdate) onUpdate();
             success("Tag removed");
-        } catch (err) {
+        } catch {
             error("Failed to update tags");
         }
     };
@@ -90,7 +90,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
             if (onUpdate) onUpdate();
             success("Change removed from queue");
             setShowRemoveConfirm(false);
-        } catch (err) {
+        } catch {
             error("Failed to remove change");
         } finally {
             setLoadingAction(false);
@@ -114,7 +114,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
             onOpenInEditor!(change);
             success("Draft restored to editor");
             setShowEditorConfirm(false);
-        } catch (err) {
+        } catch {
             error("Failed to move to editor");
         } finally {
             setLoadingAction(false);
@@ -127,7 +127,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
             const updatedChange = { ...change, balance_direction: direction };
             await patchService.updateQueueItem(mode, index, updatedChange);
             if (onUpdate) onUpdate();
-        } catch (err) {
+        } catch {
             error("Failed to update balance direction");
         }
     };

@@ -38,9 +38,8 @@ export function ResetDataDialog({ onResetComplete }: ResetDataDialogProps) {
       } else {
         error("Reset Failed");
       }
-    } catch (err: any) {
-
-      error("Reset Failed");
+    } catch {
+      error("Failed to reset data");
     } finally {
       setIsLoading(false);
     }

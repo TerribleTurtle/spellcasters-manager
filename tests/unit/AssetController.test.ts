@@ -4,7 +4,6 @@ import { uploadAsset, listAssets } from '../../server/controllers/assetControlle
 import { Response } from 'express';
 import { createMockRequest, MockRequest } from '../helpers/mockRequest';
 import fs from 'fs';
-import path from 'path';
 
 vi.mock('fs');
 

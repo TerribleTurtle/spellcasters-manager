@@ -56,7 +56,7 @@ export function AppSidebar({
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-        } catch (e) {
+        } catch {
             error("Export Failed");
         }
     };

@@ -72,11 +72,13 @@ export const getPatchHistory = async (req: Request, res: Response) => {
         // Kept in controller as it's view-specific logic
         if (flat === 'true') {
             const flattened = patches.flatMap(p => 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 p.changes.map((c: any) => ({
                     ...c,
                     patch_version: p.version,
                     patch_date: p.date,
-                    patch_title: p.title
+                    patch_title: p.title,
+                    patch_tags: p.tags
                 }))
             );
             

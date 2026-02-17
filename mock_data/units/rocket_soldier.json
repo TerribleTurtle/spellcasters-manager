@@ -6,7 +6,6 @@
   "magic_school": "Technomancy",
   "rank": "I",
   "description": "Medium-range soldier that deals bonus damage to structures.",
-  "icon": "units/rocket_soldier.png",
   "image_required": true,
   "tags": [],
   "changelog": [

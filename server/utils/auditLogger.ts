@@ -5,6 +5,7 @@ export class AuditLogger {
     /**
      * Appends a structured log entry to audit.jsonl in the data directory.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     logAction(dataDir: string, action: string, details: Record<string, any>, user: string = "Operator") {
         const logFile = path.join(dataDir, 'audit.jsonl');
         

@@ -14,6 +14,7 @@ interface UseEditorActionsProps<T> {
     onSave?: () => void;
     onNavigateToScribe?: () => void;
     label?: string; // e.g. "Unit", "Hero", "Item" - defaults to capitalized category
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setError?: UseFormSetError<any>;
 }
 
@@ -39,7 +40,7 @@ export function useEditorActions<T>({
             success(`${entityLabel} deleted successfully`);
             if (onSave) onSave();
             if (onSuccess) onSuccess();
-        } catch (_err) {
+        } catch {
             error(`Failed to delete ${entityLabel.toLowerCase()}`);
         } finally {
             setIsSaving(false);
@@ -60,10 +61,12 @@ export function useEditorActions<T>({
     /**
      * Handles client-side Zod validation errors from react-hook-form
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleClientValidation = (errors: any) => {
         const issues: string[] = [];
         
         // Recursively extract error messages
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const extractErrors = (obj: any) => {
             for (const key in obj) {
                 if (obj[key]?.message && typeof obj[key].message === 'string') {
@@ -87,7 +90,9 @@ export function useEditorActions<T>({
     // --- Diff / Preview Logic ---
     const [preview, setPreview] = useState<{
         isOpen: boolean;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         oldData: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         newData: any;
         saveType: 'silent' | 'quick' | 'queue';
         onConfirm: () => Promise<void>;
@@ -163,6 +168,7 @@ export function useEditorActions<T>({
                 await patchService.quickCommit(mode, {
                     change: {
                         target_id: data.id || targetFilename,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         name: data.name || (initialData as any).name || targetFilename,
                         field: 'quick-edit',
                         old: initialData,

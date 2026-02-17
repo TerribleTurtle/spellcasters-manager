@@ -1,6 +1,8 @@
 export class HttpError extends Error {
   status: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(message: string, status: number, body: any) {
       super(message);
       this.name = 'HttpError';
@@ -16,6 +18,7 @@ export class HttpClient {
     
     if (!res.ok) {
        let errorMessage = res.statusText;
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
        let errorBody: any = null;
        try {
          const text = await res.text();

@@ -143,7 +143,6 @@ export class DataService {
 
   async resetDevData(): Promise<{ success: boolean; error?: string; details?: string }> {
       try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await httpClient.request<{ success: boolean; message: string; details?: string; error?: string }>('/api/admin/reset', {
               method: 'POST'
           });

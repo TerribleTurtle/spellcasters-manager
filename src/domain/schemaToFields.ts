@@ -20,6 +20,7 @@ export interface SchemaFieldsConfig {
  */
 function unwrap(schema: ZodTypeAny): ZodTypeAny {
   if (schema instanceof ZodOptional || schema instanceof ZodDefault) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return unwrap((schema as any)._def.innerType);
   }
   return schema;
@@ -32,6 +33,7 @@ function extractNumberConstraints(schema: ZodNumber): { min?: number; max?: numb
   const result: { min?: number; max?: number; step?: number } = {};
   
   // Zod 4 direct properties
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const anySchema = schema as any;
   if (anySchema.minValue !== undefined && anySchema.minValue !== null) result.min = anySchema.minValue;
   if (anySchema.maxValue !== undefined && anySchema.maxValue !== null) result.max = anySchema.maxValue;
@@ -39,8 +41,11 @@ function extractNumberConstraints(schema: ZodNumber): { min?: number; max?: numb
 
   // Zod 3 fallback (checks array)
   for (const check of (schema._def.checks || [])) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((check as any).kind === 'min') result.min = (check as any).value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((check as any).kind === 'max') result.max = (check as any).value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((check as any).kind === 'multipleOf') result.step = (check as any).value;
   }
   return result;
@@ -75,6 +80,7 @@ function fieldNameToLabel(name: string): string {
  * - `z.array/record`  → excluded (complex types handled elsewhere)
  */
 export function schemaToFields(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schema: ZodObject<any>,
   config: SchemaFieldsConfig = {}
 ): EditorField[] {

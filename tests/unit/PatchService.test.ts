@@ -1,8 +1,6 @@
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { patchService } from '../../server/services/patchService';
 import { fileService } from '../../server/services/fileService';
-import { GitService } from '../../server/services/gitService';
-import path from 'path';
 import fs from 'fs';
 
 // Mock dependencies
@@ -11,16 +9,19 @@ vi.mock('fs');
 
 // Mock GitService instance methods
 const mocks = vi.hoisted(() => ({
-    commitPatch: vi.fn()
+    commitPatch: vi.fn(),
+    getStagedDiff: vi.fn().mockResolvedValue('')
 }));
 
 vi.mock('../../server/services/gitService', () => {
     return {
         GitService: class {
             commitPatch = mocks.commitPatch;
+            getStagedDiff = mocks.getStagedDiff;
         },
         gitService: {
-            commitPatch: mocks.commitPatch
+            commitPatch: mocks.commitPatch,
+            getStagedDiff: mocks.getStagedDiff
         }
     };
 });

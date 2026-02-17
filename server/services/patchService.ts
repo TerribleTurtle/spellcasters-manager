@@ -4,7 +4,6 @@ import { fileService } from './fileService.js';
 import { gitService } from './gitService.js';
 import { Change, Patch, PatchType } from '../../src/domain/schemas.js';
 import { stripInternalFields } from '../../src/domain/utils.js';
-import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger.js';
 import { auditLogger } from '../utils/auditLogger.js';
 
@@ -123,7 +122,20 @@ export class PatchService {
         patches.unshift(patchEntry);
         await fileService.writeJson(patchesFile, patches);
 
-        await this.gitService.commitPatch(dataDir, patchEntry, `[QUICK] ${patchEntry.title}`);
+        // Stage only the files we actually touched
+        const touchedFiles = [patchesFile];
+        // The entity file was already saved by saveData before quickSave was called
+        if (change.category) {
+            const entityFile = path.join(dataDir, change.category, 
+                change.target_id.endsWith('.json') ? change.target_id : `${change.target_id}.json`);
+            touchedFiles.push(entityFile);
+        }
+
+        // Capture git diff before committing
+        const diff = await this.gitService.getStagedDiff(dataDir, touchedFiles);
+        if (diff) patchEntry.diff = diff;
+
+        await this.gitService.commitPatch(dataDir, patchEntry, `[QUICK] ${patchEntry.title}`, touchedFiles);
         auditLogger.logAction(dataDir, 'PATCH_QUICKSAVE', { patchId: patchEntry.id, title: patchEntry.title });
         return patchEntry;
     }
@@ -212,11 +224,29 @@ export class PatchService {
                 }
             }
 
+            // Stage only the files we actually touched
+            const touchedFiles = [patchesFile, queueFile];
+            // Entity files were already saved by saveData calls before commit
+            for (const change of finalChanges) {
+                if (change.category) {
+                    const entityFile = path.join(dataDir, change.category, 
+                        change.target_id.endsWith('.json') ? change.target_id : `${change.target_id}.json`);
+                    touchedFiles.push(entityFile);
+                }
+            }
+
+            // Capture git diff before committing
+            const diff = await this.gitService.getStagedDiff(dataDir, touchedFiles);
+            if (diff) patchEntry.diff = diff;
+
+            // Re-write patches with diff included
+            await fileService.writeJson(patchesFile, patches);
+
             const commitMsg = existingIdx >= 0 
                 ? `[UPDATE] ${title} (${version})`
                 : `[${type.toUpperCase()}] ${title} (${version})`;
-                
-            await this.gitService.commitPatch(dataDir, patchEntry, commitMsg);
+            
+            await this.gitService.commitPatch(dataDir, patchEntry, commitMsg, touchedFiles);
             logger.info(`Patch ${version} committed successfully with ${finalChanges.length} changes.`);
             auditLogger.logAction(dataDir, 'PATCH_COMMIT', { version, title, changeCount: finalChanges.length });
             return patchEntry;
@@ -297,6 +327,7 @@ export class PatchService {
                 continue;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let content: any = {};
             if (await fileService.exists(filePath)) content = await fileService.readJson(filePath);
 
@@ -331,7 +362,18 @@ export class PatchService {
 
         patches.unshift(revertPatch);
         await fileService.writeJson(patchesFile, patches);
-        await this.gitService.commitPatch(dataDir, revertPatch, `[ROLLBACK] ${originalPatch.title}`);
+
+        // Stage only patchesFile + the entity files we actually reverted
+        const touchedFiles = [patchesFile];
+        for (const [targetId, changes] of Object.entries(fileUpdates)) {
+            const cat = changes.find(c => c.category)?.category;
+            if (cat) {
+                touchedFiles.push(path.join(dataDir, cat, 
+                    targetId.endsWith('.json') ? targetId : `${targetId}.json`));
+            }
+        }
+
+        await this.gitService.commitPatch(dataDir, revertPatch, `[ROLLBACK] ${originalPatch.title}`, touchedFiles);
         auditLogger.logAction(dataDir, 'PATCH_ROLLBACK', { originalId: id, revertId: revertPatch.id });
         
         return revertPatch;
@@ -406,11 +448,13 @@ export class PatchService {
         const timelineDir = path.join(apiRoot, 'timeline');
         await fileService.ensureDir(timelineDir);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const timelineMap: Record<string, any[]> = {};
         for (let i = patches.length - 1; i >= 0; i--) {
             const patch = patches[i];
             for (const change of patch.changes) {
                 if (!timelineMap[change.target_id]) timelineMap[change.target_id] = [];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const exists = timelineMap[change.target_id].find((t: any) => t.version === patch.version);
                 if (!exists && change.new) {
                     timelineMap[change.target_id].push({

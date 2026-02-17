@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AppMode, Patch, Change } from "@/types";
 import { patchService } from "@/services/PatchService";
 import { Input } from "@/components/ui/input";
@@ -41,10 +41,10 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
     const [loading, setLoading] = useState(true);
     const { success, error } = useToast();
 
-    const fetchData = async (isDebounced = false) => {
+    const fetchData = useCallback(async (isDebounced = false) => {
         if (!isDebounced) setLoading(true);
         try {
-            const filters: any = {};
+            const filters: Record<string, string | boolean> = {};
             if (tagFilter !== 'all') filters.tag = tagFilter;
             if (searchTerm) filters.entity = searchTerm;
             if (startDate) filters.from = startDate;
@@ -53,12 +53,12 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
 
             const result = await patchService.getHistory(mode, filters);
             setData(result);
-        } catch (err) {
+        } catch {
             error("Failed to load history");
         } finally {
             setLoading(false);
         }
-    };
+    }, [mode, tagFilter, searchTerm, startDate, endDate, viewMode, error]);
 
     const handleRollback = (patchId: string) => {
         setRollbackCandidate(patchId);
@@ -80,7 +80,7 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
             } else {
                 error("Rollback failed.");
             }
-        } catch (err) {
+        } catch {
             error("Rollback failed.");
         } finally {
             setLoading(false);
@@ -90,7 +90,7 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
     // Immediate fetch on mode/viewMode change
     useEffect(() => {
         fetchData();
-    }, [mode, viewMode]);
+    }, [fetchData]);
 
     // Debounced fetch on filter changes
     useEffect(() => {
@@ -99,7 +99,7 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
         setLoading(true);
         const timer = setTimeout(() => fetchData(true), 300);
         return () => clearTimeout(timer);
-    }, [tagFilter, searchTerm, startDate, endDate]);
+    }, [fetchData]);
 
     return (
         <div className="flex flex-col h-full">

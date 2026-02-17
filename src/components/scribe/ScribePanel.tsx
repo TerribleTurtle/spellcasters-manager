@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -53,7 +53,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
   const { success, error } = useToast();
 
-  const fetchQueue = () => {
+  const fetchQueue = useCallback(() => {
     patchService.getQueue(mode)
       .then(newChanges => {
          // Merge logic: Preserve tags/category if target_id and field match
@@ -68,14 +68,14 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
              return merged;
          });
       })
-      .catch(_err => {
+      .catch(() => {
           // Silent or toast if critical
       })
       .finally(() => {
           // Clear selection on refresh to avoid index mismatch
           setSelectedIndices(new Set());
       });
-  }
+  }, [mode]);
 
   const toggleSelection = (index: number) => {
       const next = new Set(selectedIndices);
@@ -107,7 +107,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
           await patchService.bulkRemoveFromQueue(mode, indices);
           success(`Removed ${indices.length} items`);
           fetchQueue(); // Reloads and clears selection
-      } catch (err) {
+      } catch {
           error("Failed to remove items");
       } finally {
           setLoading(false);
@@ -124,7 +124,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
     if(activeTab === 'history') {
         // HistoryGrid handles its own fetching
     }
-  }, [mode, refreshTrigger]);
+  }, [fetchQueue, refreshTrigger, activeTab]);
 
   const handlePublish = async () => {
     setLoading(true);
@@ -155,7 +155,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
       } else {
         error("Error publishing patch");
       }
-    } catch (err) {
+    } catch {
       error("Failed to publish");
     } finally {
       setLoading(false);

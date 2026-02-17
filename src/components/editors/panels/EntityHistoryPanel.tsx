@@ -9,9 +9,10 @@ interface HistoryEntry {
   target_id: string;
   name: string;
   field: string;
-  old: any;
-  new: any;
+  old: unknown;
+  new: unknown;
   tags?: string[];
+  patch_tags?: string[];
   patch_version?: string;
   patch_date?: string;
   patch_title?: string;
@@ -20,7 +21,7 @@ interface HistoryEntry {
 interface EntityHistoryPanelProps {
   entityId: string;
   mode: AppMode;
-  onRetcon?: (field: string, oldValue: any) => void;
+  onRetcon?: (field: string, oldValue: unknown) => void;
 }
 
 export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPanelProps) {
@@ -30,11 +31,13 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(false);
     patchService
       .getHistory(mode, { entity: entityId, flat: true })
-      .then((data: any[]) => {
+      .then((data: unknown) => {
+        if (!Array.isArray(data)) return;
         // Flatten: the flat endpoint returns change-level entries with patch metadata
         const entries: HistoryEntry[] = data.map((item: any) => ({
           target_id: item.target_id,
@@ -43,6 +46,7 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
           old: item.old,
           new: item.new,
           tags: item.tags,
+          patch_tags: item.patch_tags,
           patch_version: item.patch_version || item.version,
           patch_date: item.patch_date || item.date,
           patch_title: item.patch_title || item.title,
@@ -155,12 +159,20 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
                 )}
 
                 {/* Tags */}
-                {entry.tags && entry.tags.length > 0 && (
-                  <div className="flex items-center gap-1 mt-1">
+                {((entry.tags && entry.tags.length > 0) || (entry.patch_tags && entry.patch_tags.length > 0)) && (
+                  <div className="flex items-center gap-1 mt-1 flex-wrap">
                     <Tag className="w-2.5 h-2.5 text-muted-foreground/40" />
-                    {entry.tags.map((tag) => (
+                    {entry.patch_tags?.map((tag) => (
                       <span
-                        key={tag}
+                        key={`pt-${tag}`}
+                        className="text-micro px-1 py-0.5 rounded bg-teal-500/10 text-teal-400/80"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {entry.tags?.map((tag) => (
+                      <span
+                        key={`ct-${tag}`}
                         className="text-micro px-1 py-0.5 rounded bg-primary/10 text-primary/80"
                       >
                         {tag}
@@ -192,7 +204,7 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
   );
 }
 
-function formatValue(val: any): string {
+function formatValue(val: unknown): string {
   if (val === null || val === undefined) return "—";
   if (typeof val === "object") return JSON.stringify(val).slice(0, 40) + "…";
   return String(val);
