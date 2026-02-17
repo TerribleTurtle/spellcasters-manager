@@ -7,12 +7,16 @@ interface Toast {
   id: string;
   message: string;
   type: ToastType;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface ToastContextType {
-  toast: (message: string, type?: ToastType) => void;
-  success: (message: string) => void;
-  error: (message: string) => void;
+  toast: (message: string, type?: ToastType, action?: { label: string; onClick: () => void }) => void;
+  success: (message: string, action?: { label: string; onClick: () => void }) => void;
+  error: (message: string, action?: { label: string; onClick: () => void }) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -24,18 +28,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const toast = useCallback((message: string, type: ToastType = 'info') => {
+  const toast = useCallback((message: string, type: ToastType = 'info', action?: { label: string; onClick: () => void }) => {
     const id = Math.random().toString(36).substr(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type, action }]);
 
-    // Auto-dismiss
+    // Auto-dismiss (longer if action present)
     setTimeout(() => {
       removeToast(id);
-    }, 4000);
+    }, action ? 6000 : 4000);
   }, [removeToast]);
 
-  const success = useCallback((message: string) => toast(message, 'success'), [toast]);
-  const errorFn = useCallback((message: string) => toast(message, 'error'), [toast]);
+  const success = useCallback((message: string, action?: { label: string; onClick: () => void }) => toast(message, 'success', action), [toast]);
+  const errorFn = useCallback((message: string, action?: { label: string; onClick: () => void }) => toast(message, 'error', action), [toast]);
 
   return (
     <ToastContext.Provider value={{ toast, success, error: errorFn }}>
@@ -57,6 +61,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {t.type === 'info' && <Info className="w-5 h-5 shrink-0 text-primary" />}
             
             <div className="flex-1 text-sm font-medium pt-0.5">{t.message}</div>
+            
+            {t.action && (
+              <button 
+                onClick={() => {
+                  t.action!.onClick();
+                  removeToast(t.id);
+                }}
+                className="text-xs font-semibold underline hover:no-underline transition-all mr-2"
+              >
+                {t.action.label}
+              </button>
+            )}
             
             <button onClick={() => removeToast(t.id)} className="opacity-70 hover:opacity-100 transition-opacity">
               <X size={16} />

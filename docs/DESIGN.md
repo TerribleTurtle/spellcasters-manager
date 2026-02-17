@@ -1,88 +1,89 @@
 # Design Document: "The Grimoire" (Spellcasters Data Manager)
 
-> **Status:** Scaffolding
-> **Author:** Antigravity (AI Assistant)
-> **Date:** 2026-02-13
+> **Status:** Active
+> **Last Updated:** 2026-02-16
 
-## 1. Overview
+## 1. Identity
 
-"The Grimoire" is a proposed local data management dashboard for _Spellcasters Chronicles_. It serves as the primary interface for game designers and contributors to edit the JSON data stored in the `spellcasters-community-api` repository.
+"The Grimoire" is a **local-first operator tool** for a solo dev managing a community game API. It replaces manual JSON editing with validated forms, a structured patch workflow, and git integration.
 
-**Key Objectives:**
+It exists to do exactly **three jobs**:
 
-- **Eliminate manual JSON editing errors:** Replace raw text editing with validated forms.
-- **Streamline Asset Management:** Drag-and-drop support for card art and icons.
-- **Automate Patch Notes:** Generate changelogs by comparing data snapshots or Git diffs.
+| #   | Job                | Description                                                                    |
+| --- | ------------------ | ------------------------------------------------------------------------------ |
+| 1   | **Quick Fix**      | Open an entity → change a value → save → done. Under 30 seconds.               |
+| 2   | **Patch Publish**  | Batch multiple changes → tag them → publish a versioned patch with git commit. |
+| 3   | **Data Integrity** | Prevent bad data from reaching the API. Zod validates on save. Period.         |
 
-## 2. Architecture
+If a feature doesn't serve one of these three jobs, it doesn't belong.
 
-### 2.1 Technology Stack (Hybrid Local)
+## 2. UX Principles
 
-We propose a "Hybrid Local" architecture to balance ease of development with file system access.
+1. **Speed Over Polish** — The UI gets out of the way. No animations that delay a click.
+2. **Safety Through Visibility** — You need to see what changed, what's queued, and what you're about to commit. DEV/LIVE is the only hard gate.
+3. **One Screen, One Job** — The Library finds entities. The Editor edits. The Patch Manager reviews and commits.
+4. **Trust the Operator** — Schema validation catches real errors. No hand-holding.
+5. **Maintainability = Less Code** — Every component you don't write is one you don't debug at 2am.
 
-- **Frontend:** React (Vite) + Tailwind CSS (shadcn/ui for components).
-- **Backend/Middle:** A lightweight Node.js (Express) server running locally.
-- **Data Source:** Direct file system access to `../spellcasters-community-api/data`.
+## 3. Architecture
 
-### 2.2 Why not just a pure Web App?
+### Technology Stack
 
-Browser sandbox security prevents direct writing to `C:\Projects\...`. A small local server bridges this gap, exposing endpoints like:
+| Layer           | Tech                              | Purpose                                                |
+| --------------- | --------------------------------- | ------------------------------------------------------ |
+| Frontend        | React + Vite + TailwindCSS v4     | UI with hot reload                                     |
+| Backend         | Express + Node.js                 | File system bridge (read/write JSON, asset management) |
+| Validation      | Zod (`src/domain/schemas.ts`)     | Single source of truth for both client and server      |
+| Version Control | Git CLI (`git add`, `git commit`) | Automated commits on patch publish                     |
+| Data            | JSON files on disk                | No database — files are the source of truth            |
 
-- `GET /api/units` -> Reads `units/` directory.
-- `POST /api/units` -> Writes JSON file + Validates Schema.
-- `POST /api/assets` -> Moves uploaded image to `assets/` folder.
+### Why a Local Server?
 
-## 3. Core Features
+Browser sandbox prevents direct file writes. The Express server bridges the gap, exposing:
 
-### 3.1 The Editor (The Forge)
+- **Health**: `GET /api/health`
+- **Data**:
+  - `GET /api/list/:category` — List files
+  - `GET /api/data/:category/:filename` — Read file
+  - `POST /api/save/:category/:filename` — Writr file (optional `?queue=true`)
+  - `POST /api/save/:category/batch` — Batch write
+  - `DELETE /api/data/:category/:filename` — Delete file
+  - `POST /api/admin/reset` — Reset DEV data
+  - `GET /api/data/export` / `POST /api/data/import` — Bulk data portability
+- **Patches**:
+  - `GET/POST/PUT/DELETE /api/patches/queue` — Manage queue
+  - `POST /api/patches/quick-commit` — Silent save + tag
+  - `GET /api/patches/history` — Read patches.json
+  - `POST /api/patches/commit` — Publish queue to patch
+  - `POST /api/patches/:id/rollback` — Revert a patch
+- **Assets**:
+  - `GET /api/assets/list` — List images
+  - `POST /api/assets/upload` — Upload image
 
-A form-based editor for:
+## 4. Core Workflow
 
-- **Units**: Stats, Abilities (with structured inputs for damage/range), Tribes.
-- **Spells**: Costs, Effects, Schools.
-- **Titans**: unique logic.
-
-**Validation:**
-Real-time Zod schema validation ensuring no "illegal" states (e.g., negative mana cost) are saved.
-
-### 3.2 Asset Manager
-
-- **Visual Grid**: See all card art in one place.
-- **Drag & Drop**: Drop an image onto a Unit form --> Auto-renames to `unit_{id}.png` --> Saves to correct folder.
-
-### 3.3 Patch Note Generator (The Scribe)
-
-This is the "Killer Feature" for workflow efficiency.
-
-**Workflow:**
-
-1.  **Session Tracking**: The app tracks changes made during the current editing session.
-2.  **Git Integration**: The app runs `git diff` behind the scenes.
-3.  **Semantic Analysis**:
-    - Raw Diff: `damage: 20 -> 25`
-    - Generated Note: "**Fireball**: Damage increased from 20 to 25."
-4.  **Export**: One-click copy metadata to Clipboard (Markdown format for Discord/GitHub).
-
-## 4. Data Flow
-
-```mermaid
-graph TD
-    User[Game Designer] -->|Edits Form| UI[Grimoire Frontend]
-    UI -->|POST /api/units| Server[Local Node Server]
-    Server -->|Writes JSON| FS[File System]
-    FS -->|Updates| API[spellcasters-community-api]
-    API -->|Consumes| Bot[spellcasters-bot]
-    API -->|Consumes| DB[spellcastersdb]
+```
+Browse Library → Edit Entity → Quick Save or Queue → Tag → Publish Patch → Git Commit
 ```
 
-## 5. Security & Deployment
+## 5. Entity Model
 
-- **Authentication**: None required (Localhost only). The app binds to `127.0.0.1`.
-- **Distribution**:
-  - **Phase 1**: Run via `npm start`.
-  - **Phase 2**: Package as Electron app (`.exe`) for non-technical contributors.
+All entities validated by Zod schemas in `src/domain/schemas.ts`:
 
-## 6. Future Roadmap
+- **UnitSchema**: Core stats (health, damage, range, speed, cost), type, tier.
+- **HeroSchema**: Extends Unit with `hero_class`, `abilities`, `ultimate_ability`.
+- **ConsumableSchema**: Items/spells with `effect_type`, `value`, `duration`, `cooldown`, `rarity`.
+- **ChangeSchema**: Tracks `target_id`, `field`, `old`, `new`, plus optional `tags`.
+- **PatchSchema**: Versioned bundle of Changes with `title`, `type`, `date`, `tags`.
 
-- **Simulation**: Run battle simulations using the data _before_ committing.
-- **Remote Sync**: Push changes to GitHub directly from the app.
+## 6. Environments
+
+| Mode              | Data Source                           | Safety                            |
+| ----------------- | ------------------------------------- | --------------------------------- |
+| **DEV** (default) | `./mock_data/`                        | Safe sandbox                      |
+| **LIVE**          | `../spellcasters-community-api/data/` | Real game data, red theme warning |
+
+## 7. Security
+
+- **Authentication**: None (localhost only, bound to `127.0.0.1`).
+- Run via `npm run dev:all`.

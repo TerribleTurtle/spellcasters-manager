@@ -2,7 +2,8 @@ import { simpleGit, SimpleGit } from 'simple-git';
 import deepDiff from 'deep-diff';
 import path from 'path';
 import fs from 'fs';
-import { Change, Patch } from '../../src/types/index.js';
+import { Change, Patch } from '../../src/domain/schemas.js';
+import { logger } from '../utils/logger.js';
 
 export class GitService {
   private git: SimpleGit;
@@ -15,20 +16,20 @@ export class GitService {
   // In the original code, this was somewhat dynamic.
   // We'll keep it simple: assume the repo root is 2 levels up from dataDir (standard structure)
   private getGitForDataDir(dataDir: string): SimpleGit {
-     const repoRoot = path.resolve(dataDir, '../..');
+     const repoRoot = path.resolve(dataDir, '..');
      return simpleGit(repoRoot);
   }
 
   async getDiff(dataDir: string): Promise<Change[]> {
     const git = this.getGitForDataDir(dataDir);
-    const repoRoot = path.resolve(dataDir, '../..');
+    const repoRoot = path.resolve(dataDir, '..');
 
     try {
       const status = await git.status();
       // Filter for JSON files
       const modifiedFiles = status.modified.filter(f => f.endsWith('.json'));
       
-      let changes: Change[] = [];
+      const changes: Change[] = [];
 
       for (const file of modifiedFiles) {
         // Current Content (Disk)
@@ -61,13 +62,13 @@ export class GitService {
                 }
               });
             }
-        } catch (e) {
-            console.warn(`Could not show HEAD:${file}`, e);
+        } catch (e: unknown) {
+            logger.warn(`Could not show HEAD:${file}`, { error: e });
         }
       }
       return changes;
-    } catch (err) {
-      console.error("Diff Error:", err);
+    } catch (err: unknown) {
+      logger.error("Diff Error:", { error: err });
       return [];
     }
   }
@@ -80,4 +81,8 @@ export class GitService {
 }
 
 // We export a factory or class, instance depends on root.
-// For now, let's export the class.
+// For now, let's export the class and a default instance for server root?
+// Actually simpler to just export the class and let patchService instantiate, 
+// OR export a singleton if rootDir is constant.
+// Server runs in specific cwd, so '.' is usually project root.
+export const gitService = new GitService('.');

@@ -12,6 +12,11 @@ export class AssetService {
           body: formData
       });
   }
+
+  async list(mode: AppMode): Promise<string[]> {
+      const response = await httpClient.request<{ assets: string[] }>(`/api/assets/list?mode=${mode}`);
+      return response.assets;
+  }
 }
 
 export const assetService = new AssetService();

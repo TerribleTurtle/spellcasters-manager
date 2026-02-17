@@ -1,7 +1,19 @@
+import { useState } from 'react';
 import { AppMode, AppView } from "@/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Menu, ChevronRight, Home, Zap, Shield } from "lucide-react";
+import { HealthIndicator } from "./HealthIndicator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface AppHeaderProps {
     mode: AppMode;
@@ -12,6 +24,20 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: AppHeaderProps) {
+    const [pendingMode, setPendingMode] = useState<AppMode | null>(null);
+
+    const handleModeSwitch = (newMode: AppMode) => {
+        if (newMode === mode) return; // No change
+        setPendingMode(newMode);
+    };
+
+    const confirmModeSwitch = () => {
+        if (pendingMode) {
+            setMode(pendingMode);
+            setPendingMode(null);
+        }
+    };
+
     return (
         <header className="h-16 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6">
             
@@ -27,9 +53,7 @@ export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: Ap
                   <span className="text-muted-foreground">Spellcasters</span>
                   <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   {view === 'scribe' ? (
-                       <span className="text-foreground">The Scribe</span>
-                  ) : view === 'builder' ? (
-                        <span className="text-foreground">Unit Builder</span>
+                       <span className="text-foreground">Patch Manager</span>
                   ) : (
                        <>
                         <span className="text-muted-foreground">Grimoire</span>
@@ -45,7 +69,11 @@ export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: Ap
             </div>
 
             {/* Right: Environment Switcher */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+                
+                {/* Connection Status */}
+                {/* Connection Status */}
+                <HealthIndicator />
                 <div className="flex items-center bg-card/50 border border-border rounded-full p-1 pl-3 pr-1 backdrop-blur-sm">
                     <span className="text-xs font-medium mr-3 text-muted-foreground uppercase tracking-wider">
                         Environment
@@ -54,33 +82,66 @@ export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: Ap
                     <div className="flex bg-muted/50 rounded-full p-0.5 relative">
                         {/* Selected Indicator */}
                          <div className={cn(
-                            "absolute inset-y-0.5 w-[calc(50%-2px)] rounded-full transition-all duration-300 shadow-sm",
-                             mode === 'dev' ? "left-0.5 bg-blue-600" : "left-[50%] bg-red-600"
+                            "absolute inset-y-1 w-[calc(50%-4px)] rounded-md transition-all duration-300 shadow-sm",
+                             mode === 'dev' ? "left-1 bg-env-dev text-white" : "left-[calc(50%+2px)] bg-env-live text-white"
                          )} />
 
-                        <button 
-                            onClick={() => setMode('dev')}
+                        <Button 
+                            variant="ghost"
+                            onClick={() => handleModeSwitch('dev')}
                             className={cn(
-                                "relative z-10 px-3 py-1.5 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5",
-                                mode === 'dev' ? "text-white" : "text-muted-foreground hover:text-foreground"
+                                "relative z-10 px-3 py-1.5 h-auto rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 hover:bg-transparent",
+                                mode === 'dev' ? "text-white hover:text-white" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             <Zap className="w-3 h-3" />
                             DEV
-                        </button>
-                        <button 
-                             onClick={() => setMode('live')}
+                        </Button>
+                        <Button 
+                             variant="ghost"
+                             onClick={() => handleModeSwitch('live')}
                              className={cn(
-                                "relative z-10 px-3 py-1.5 rounded-full text-xs font-bold transition-colors flex items-center gap-1.5",
-                                mode === 'live' ? "text-white" : "text-muted-foreground hover:text-foreground"
+                                "relative z-10 px-3 py-1.5 h-auto rounded-full text-xs font-bold transition-colors flex items-center gap-1.5 hover:bg-transparent",
+                                mode === 'live' ? "text-white hover:text-white" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             <Shield className="w-3 h-3" />
                             LIVE
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
+
+            <AlertDialog open={!!pendingMode} onOpenChange={(open) => !open && setPendingMode(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Switch Environment?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {pendingMode === 'live' ? (
+                                <>
+                                    You are about to switch to <strong>LIVE</strong> mode. 
+                                    <br/><br/>
+                                    Any changes you make here will affect the actual game data. 
+                                    The theme will change to indicate this dangerous state.
+                                </>
+                            ) : (
+                                <>
+                                    Returning to <strong>DEV</strong> mode (Sandbox).
+                                </>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={confirmModeSwitch}
+                            className={pendingMode === 'live' ? "bg-destructive hover:bg-destructive/90" : ""}
+                        >
+                            {pendingMode === 'live' ? "Switch to Live" : "Switch to Dev"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </header>
     );
 }

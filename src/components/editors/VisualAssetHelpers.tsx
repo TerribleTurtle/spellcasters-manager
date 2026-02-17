@@ -1,25 +1,31 @@
-import { useDropzone } from 'react-dropzone'
-import { useCallback } from 'react';
 
-import { AppMode } from "@/types"
-import { assetService } from "@/services/AssetService"
-import { useToast } from "@/components/ui/toast-context"
+import { useCallback, useRef, useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { ImagePlus, RefreshCw, UploadCloud } from "lucide-react";
+
+import { AppMode } from "@/types";
+import { assetService } from "@/services/AssetService";
+import { useToast } from "@/components/ui/toast-context";
+import { AssetPicker } from './dialogs/AssetPicker';
+import { cn } from "@/lib/utils";
 
 interface VisualAssetHelpersProps {
   unitName: string;
   currentIcon?: string;
   mode: AppMode;
   onUpload: (filename: string) => void;
+  compact?: boolean;
 }
 
-export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode }: VisualAssetHelpersProps) {
+export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode, compact }: VisualAssetHelpersProps) {
   const { success, error } = useToast();
-  
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    // Auto-rename logic: "fireball_wizard.png"
     const ext = file.name.split('.').pop();
     const targetName = `${unitName.toLowerCase().replace(/\s+/g, '_')}.${ext}`;
 
@@ -30,56 +36,123 @@ export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode }: Vi
         success(`Uploaded: ${data.filename}`);
       }
     })
-    .catch((err) => {
-        console.error(err);
-        error("Upload failed");
-    });
+    .catch(() => {
 
+        error("Upload failed");
+      });
+
+    // Reset so re-selecting the same file triggers onChange
+    e.target.value = '';
   }, [unitName, onUpload, mode, success, error]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
-
   return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Unit Icon</h3>
-      
-      <div className="flex gap-4">
-        {/* Preview */}
-        <div className="shrink-0 w-24 h-24 bg-muted/50 rounded-lg border-2 border-dashed border-muted-foreground/20 flex items-center justify-center overflow-hidden relative group">
-             {currentIcon ? (
-                <>
-                <img src={`/api/assets/${mode}/${currentIcon}`} alt="Icon" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="text-xs text-white font-medium">Change</span>
+    <div className={cn("space-y-4", compact && "space-y-0 h-full")}>
+        {!compact && (
+            <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium leading-none">Unit Icon</h3>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                        <UploadCloud className="w-4 h-4 mr-2" />
+                        Upload
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
+                        <ImagePlus className="w-4 h-4 mr-2" />
+                        Browse Library
+                    </Button>
                 </div>
-                </>
-             ) : (
-                <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
-                    <span className="text-xs">No Icon</span>
-                </div>
-             )}
-        </div>
+            </div>
+        )}
 
-        {/* Dropzone */}
-        <div 
-            {...getRootProps()} 
-            className={`flex-1 rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-4 cursor-pointer transition-all duration-200 
-                ${isDragActive 
-                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
-                    : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/50'
-                }`}
-        >
-          <input {...getInputProps()} />
-          <div className="text-center space-y-1">
-             <p className="text-sm font-medium text-foreground">
-                {isDragActive ? "Drop art here!" : "Click or drag art"}
-             </p>
-             <p className="text-xs text-muted-foreground">
-                Supports PNG, JPG, GIF
-             </p>
-          </div>
-        </div>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+      
+      {/* Preview Card */}
+      <div 
+        className={cn(
+            "relative group overflow-hidden transition-all duration-200 cursor-pointer",
+            compact 
+                ? "w-full h-full rounded-md border bg-muted/30 hover:border-primary/50" 
+                : "rounded-xl border bg-muted/30 hover:border-primary/50"
+        )}
+        onClick={() => setPickerOpen(true)}
+        title="Click to change icon"
+      >
+        {compact ? (
+            // Compact Mode: Just the image
+            <div className="w-full h-full flex items-center justify-center bg-background">
+                 {currentIcon ? (
+                     <img 
+                        src={`/api/assets/${mode}/${currentIcon}`} 
+                        alt="Icon" 
+                        className="w-full h-full object-cover" 
+                     />
+                 ) : (
+                     <UploadCloud className="w-6 h-6 text-muted-foreground/30" />
+                 )}
+                 
+                 {/* Hover Overlay */}
+                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <RefreshCw className="w-4 h-4 text-white" />
+                 </div>
+            </div>
+        ) : (
+            // Full Mode
+            <div className="flex p-4 gap-4 items-start">
+                 {/* Icon Preview */}
+                 <div className="shrink-0 w-24 h-24 bg-background rounded-lg border shadow-sm overflow-hidden flex items-center justify-center">
+                     {currentIcon ? (
+                         <img 
+                            src={`/api/assets/${mode}/${currentIcon}`} 
+                            alt="Icon" 
+                            className="w-full h-full object-cover" 
+                         />
+                     ) : (
+                         <UploadCloud className="w-8 h-8 text-muted-foreground/30" />
+                     )}
+                 </div>
+    
+                 {/* Meta / Actions */}
+                 <div className="flex-1 space-y-2 min-w-0">
+                      <div className="space-y-1">
+                          <p className="text-sm font-medium truncate">
+                            {currentIcon || "No Asset Selected"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Click to browse library, or use Upload above.
+                          </p>
+                      </div>
+                      
+                      {currentIcon && (
+                          <div className="flex gap-2">
+                              <Button 
+                                variant="secondary" 
+                                size="xs" 
+                                className="h-7 text-xs"
+                                onClick={(e) => { e.stopPropagation(); setPickerOpen(true); }}
+                              >
+                                <RefreshCw className="w-3 h-3 mr-1" />
+                                Change
+                              </Button>
+                          </div>
+                      )}
+                 </div>
+            </div>
+        )}
       </div>
+
+      <AssetPicker 
+         open={pickerOpen} 
+         onOpenChange={setPickerOpen}
+         mode={mode}
+         onSelect={(filename) => onUpload(filename)}
+      />
+
     </div>
   )
 }

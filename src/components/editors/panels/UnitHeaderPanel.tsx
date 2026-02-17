@@ -1,20 +1,17 @@
 import { Control } from "react-hook-form";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { AppMode } from "@/types";
 import { VisualAssetHelpers } from "../VisualAssetHelpers";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
-
-
-export function UnitHeaderPanel({ control, mode, onIconUpload, unitName }: { control: Control<any>, mode: AppMode, onIconUpload: (f:string)=>void, unitName: string }) {
+export function UnitHeaderPanel({ control, mode, onIconUpload, unitName, onDelete }: { control: Control<any>, mode: AppMode, onIconUpload: (f:string)=>void, unitName: string, onDelete?: () => void }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8 p-6 border border-border/50 rounded-xl bg-card/50 backdrop-blur-sm shadow-sm relative overflow-hidden group">
-       {/* Background Decoration */}
-       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10 transition-opacity opacity-50 group-hover:opacity-100" />
-
-       {/* Left: Icon & visual */}
-       <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-4 p-4 border border-border/50 rounded-lg bg-card/40 backdrop-blur-sm shadow-sm mb-4">
+       
+       {/* Icon - Compact */}
+       <div className="shrink-0 w-16 h-16">
           <FormField
             control={control}
             name="icon"
@@ -24,13 +21,14 @@ export function UnitHeaderPanel({ control, mode, onIconUpload, unitName }: { con
                   currentIcon={field.value}
                   mode={mode}
                   onUpload={onIconUpload}
+                  compact // Pass a prop if VisualAssetHelpers supports it, or it will just fit the container
                />
             )}
           />
        </div>
 
-       {/* Right: Info */}
-       <div className="space-y-6">
+       {/* Name Input - Compact */}
+       <div className="flex-1 min-w-0">
           <FormField
             control={control}
             name="name"
@@ -38,33 +36,30 @@ export function UnitHeaderPanel({ control, mode, onIconUpload, unitName }: { con
               <FormItem className="space-y-0">
                 <FormControl>
                   <Input 
-                    placeholder="Unit Name" 
+                    placeholder="Entity Name" 
                     {...field} 
-                    className="text-4xl font-extrabold tracking-tight border-none px-0 h-auto bg-transparent shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/30" 
+                    className="text-2xl font-bold tracking-tight border-none px-0 h-auto bg-transparent shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/30 truncate" 
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-           <FormField
-              control={control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lore & Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                        placeholder="Describe the unit's role and background..." 
-                        className="min-h-[120px] resize-none bg-background/50 border-border/50 focus:border-primary/50 transition-colors" 
-                        {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
        </div>
+
+       {/* Delete Action */}
+        {onDelete && (
+            <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                onClick={onDelete}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors focus-ring rounded-sm shrink-0"
+                title="Delete Entity"
+            >
+                <Trash2 className="w-5 h-5" />
+            </Button>
+        )}
     </div>
   );
 }

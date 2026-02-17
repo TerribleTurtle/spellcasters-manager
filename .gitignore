@@ -119,3 +119,7 @@ Thumbs.db
 
 # Local Error Logs
 *_errors.txt
+
+# IDEs
+.vscode/
+.idea/

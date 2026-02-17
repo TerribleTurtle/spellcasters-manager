@@ -1,3 +1,3 @@
-export * from '../domain/schemas';
+export * from '../domain/schemas.js';
 
-export type AppView = 'editor' | 'scribe' | 'builder';
+export type AppView = 'forge' | 'scribe';
