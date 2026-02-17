@@ -87,10 +87,10 @@ When publishing in **LIVE** mode, the Manager generates static JSON files in the
 
 ## Environments
 
-| Mode              | Data Directory                        | Indicator  |
-| ----------------- | ------------------------------------- | ---------- |
-| **DEV** (default) | `./mock_data/`                        | Blue badge |
-| **LIVE**          | `../spellcasters-community-api/data/` | Red theme  |
+| Mode              | Data Directory                        | Indicator   |
+| ----------------- | ------------------------------------- | ----------- |
+| **DEV** (default) | `./mock_data/`                        | Blue badge  |
+| **LIVE**          | `../spellcasters-community-api/data/` | Green theme |
 
 Switching modes re-fetches all data. Changes in one mode do not affect the other.
 

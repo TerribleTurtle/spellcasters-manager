@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-02-16
+
+### Fixed
+
+- **Docs:** Corrected `README.md` to reflect that Live mode uses a **Green** theme (not Red).
+
 ## [1.0.0] - 2026-02-16
 
 ### Added
