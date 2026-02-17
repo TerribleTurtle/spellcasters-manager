@@ -1,5 +1,176 @@
 [
   {
+    "id": "patch_1771301214595",
+    "version": "quick",
+    "type": "Hotfix",
+    "title": "Quick Save: Fire Elementalist (quick-edit)",
+    "date": "2026-02-17",
+    "tags": [
+      "fix"
+    ],
+    "changes": [
+      {
+        "target_id": "fire_elementalist.json",
+        "name": "Fire Elementalist",
+        "field": "quick-edit",
+        "old": {
+          "$schema": "../../schemas/v2/heroes.schema.json",
+          "name": "Fire Elementalist",
+          "class": "Conqueror",
+          "category": "Spellcaster",
+          "movement_type": "Ground",
+          "health": 340,
+          "population": 0,
+          "image_required": true,
+          "difficulty": 1,
+          "tags": [],
+          "abilities": [
+            {
+              "name": "Ignition Spark",
+              "description": "Allied creatures near the Fire Elementalist capture Altar faster.",
+              "type": "Passive",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Enduring Flame",
+              "description": "Damaging burning enemies heals the Fire Elementalist.",
+              "type": "Passive",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Blazing Momentum",
+              "description": "When you or your creatures kill a Burning enemy, recharge Elemental spells.",
+              "type": "Passive",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Flame Strikes",
+              "description": "Burns enemies with powerful Fire attacks.",
+              "damage": 28,
+              "mechanics": {
+                "cleave": true
+              },
+              "type": "Primary",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Fiery Dash",
+              "description": "Performs an invincible dash in a chosen direction.",
+              "duration": 5,
+              "damage": 10,
+              "interval": 0.5,
+              "charges": 2,
+              "type": "Defense",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Burning Conquest",
+              "description": "Captures a territory, inflicts Fire damage and fully infuses allied units and Titans with Fire.",
+              "type": "Ultimate",
+              "mana_cost": 0,
+              "cooldown": 0
+            }
+          ],
+          "changelog": [
+            {
+              "version": "0.0.1",
+              "date": "2026-02-05T17:05:01.971147Z",
+              "description": "Initial Closed Beta 2 Data"
+            }
+          ],
+          "entity_id": "fire_elementalist",
+          "description": "A Conqueror who burns enemies with powerful fire attacks, cleaving through ranks and empowering allies.",
+          "_filename": "fire_elementalist.json",
+          "_category": "heroes",
+          "hero_class": "Conqueror",
+          "icon": "heroes/fire_elementalist.png"
+        },
+        "new": {
+          "$schema": "../../schemas/v2/heroes.schema.json",
+          "name": "Fire Elementalist",
+          "class": "Conqueror",
+          "category": "Spellcaster",
+          "movement_type": "Ground",
+          "health": 340,
+          "population": 0,
+          "image_required": true,
+          "difficulty": 3,
+          "tags": [],
+          "abilities": [
+            {
+              "name": "Ignition Spark",
+              "description": "Allied creatures near the Fire Elementalist capture Altar faster.",
+              "type": "Passive",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Enduring Flame",
+              "description": "Damaging burning enemies heals the Fire Elementalist.",
+              "type": "Passive",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Blazing Momentum",
+              "description": "When you or your creatures kill a Burning enemy, recharge Elemental spells.",
+              "type": "Passive",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Flame Strikes",
+              "description": "Burns enemies with powerful Fire attacks.",
+              "damage": 28,
+              "mechanics": {
+                "cleave": true
+              },
+              "type": "Primary",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Fiery Dash",
+              "description": "Performs an invincible dash in a chosen direction.",
+              "duration": 5,
+              "damage": 10,
+              "interval": 0.5,
+              "charges": 2,
+              "type": "Defense",
+              "mana_cost": 0,
+              "cooldown": 0
+            },
+            {
+              "name": "Burning Conquest",
+              "description": "Captures a territory, inflicts Fire damage and fully infuses allied units and Titans with Fire.",
+              "type": "Ultimate",
+              "mana_cost": 0,
+              "cooldown": 0
+            }
+          ],
+          "changelog": [
+            {
+              "version": "0.0.1",
+              "date": "2026-02-05T17:05:01.971147Z",
+              "description": "Initial Closed Beta 2 Data"
+            }
+          ],
+          "entity_id": "fire_elementalist",
+          "description": "A Conqueror who burns enemies with powerful fire attacks, cleaving through ranks and empowering allies.",
+          "_filename": "fire_elementalist.json",
+          "_category": "heroes",
+          "hero_class": "Conqueror",
+          "icon": "heroes/fire_elementalist.png"
+        }
+      }
+    ]
+  },
+  {
     "id": "patch_1771301201182",
     "version": "quick",
     "type": "Hotfix",
