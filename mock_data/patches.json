@@ -1,5 +1,82 @@
 [
   {
+    "id": "patch_1771295849216",
+    "version": "quick",
+    "type": "Hotfix",
+    "title": "Quick Save: Astral Tower (quick-edit)",
+    "date": "2026-02-17",
+    "tags": [
+      "1.01"
+    ],
+    "changes": [
+      {
+        "target_id": "astral_tower.json",
+        "name": "Astral Tower",
+        "field": "quick-edit",
+        "old": {
+          "entity_id": "astral_tower",
+          "name": "Astral Tower",
+          "category": "Building",
+          "magic_school": "Astral",
+          "rank": "III",
+          "description": "A heavy defensive tower that targets enemies inside allied territory and can defend itself when attacked.",
+          "icon": "units/astral_tower.png",
+          "image_required": true,
+          "tags": [],
+          "health": 4550,
+          "damage": 50,
+          "dps": 50,
+          "attack_interval": 1,
+          "charges": 1,
+          "recharge_time": 50,
+          "cast_time": 0,
+          "population": 0,
+          "changelog": [
+            {
+              "version": "0.0.1",
+              "date": "2026-02-08T09:49:16.842699+00:00",
+              "description": "Initial Closed Beta 2 Data"
+            }
+          ],
+          "last_modified": "2026-02-17T02:36:34.302Z",
+          "$schema": "../../schemas/v2/units.schema.json",
+          "_filename": "astral_tower.json",
+          "_category": "units"
+        },
+        "new": {
+          "entity_id": "astral_tower",
+          "name": "Astral Tower",
+          "category": "Building",
+          "magic_school": "Astral",
+          "rank": "III",
+          "description": "A heavy defensive tower that targets enemies inside allied territory and can defend itself when attacked.",
+          "icon": "units/astral_tower.png",
+          "image_required": true,
+          "tags": [],
+          "health": 5000,
+          "damage": 50,
+          "dps": 50,
+          "attack_interval": 1,
+          "charges": 1,
+          "recharge_time": 50,
+          "cast_time": 0,
+          "population": 0,
+          "changelog": [
+            {
+              "version": "0.0.1",
+              "date": "2026-02-08T09:49:16.842699+00:00",
+              "description": "Initial Closed Beta 2 Data"
+            }
+          ],
+          "last_modified": "2026-02-17T02:36:34.302Z",
+          "$schema": "../../schemas/v2/units.schema.json",
+          "_filename": "astral_tower.json",
+          "_category": "units"
+        }
+      }
+    ]
+  },
+  {
     "id": "patch_1771295794478",
     "version": "quick",
     "type": "Hotfix",
