@@ -3,7 +3,7 @@ import fsPromises from 'fs/promises';
 import path from 'path';
 
 export class FileService {
-  constructor() {}
+
 
   /**
    * Ensures that the directory exists. If not, creates it recursively.
@@ -102,6 +102,24 @@ export class FileService {
     if (!(await this.exists(dirPath))) return [];
     const files = await fsPromises.readdir(dirPath);
     return files.filter(f => extensions.some(ext => f.endsWith(ext)));
+  }
+
+  /**
+   * Lists subdirectories in a directory, excluding hidden and system directories.
+   * @param dirPath Absolute path to the directory
+   * @param exclude Array of directory names to exclude
+   * @returns Array of directory names
+   */
+  async listDirectories(dirPath: string, exclude: string[] = []): Promise<string[]> {
+    if (!(await this.exists(dirPath))) return [];
+    const entries = await fsPromises.readdir(dirPath);
+    const results: string[] = [];
+    for (const entry of entries) {
+      if (entry.startsWith('.') || exclude.includes(entry)) continue;
+      const stat = await fsPromises.stat(path.join(dirPath, entry));
+      if (stat.isDirectory()) results.push(entry);
+    }
+    return results;
   }
 
   listFilesSync(dirPath: string, extensions: string[] = ['.json']): string[] {

@@ -2,7 +2,7 @@ import { simpleGit, SimpleGit } from 'simple-git';
 import deepDiff from 'deep-diff';
 import path from 'path';
 import fs from 'fs';
-import { Change, Patch } from '../../src/domain/schemas.js';
+import { Change, Patch } from '../../src/domain/schemas/index.js';
 import { logger } from '../utils/logger.js';
 
 export class GitService {
@@ -53,7 +53,7 @@ export class GitService {
                 
                 if (d.kind === 'E') { // Edit
                   changes.push({
-                    target_id: diskContent.id,
+                    target_id: path.basename(file), // Use filename as ID for consistency
                     name: diskContent.name,
                     field: field,
                     old: d.lhs,
@@ -113,9 +113,4 @@ export class GitService {
   }
 }
 
-// We export a factory or class, instance depends on root.
-// For now, let's export the class and a default instance for server root?
-// Actually simpler to just export the class and let patchService instantiate, 
-// OR export a singleton if rootDir is constant.
-// Server runs in specific cwd, so '.' is usually project root.
 export const gitService = new GitService('.');

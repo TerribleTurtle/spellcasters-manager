@@ -1,11 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { patchService } from '../../server/services/patchService';
 import { fileService } from '../../server/services/fileService';
+import { queueService } from '../../server/services/queueService';
 import fs from 'fs';
 
 // Mock dependencies
 vi.mock('../../server/services/fileService');
-vi.mock('fs');
+vi.mock('../../server/services/queueService'); // Mock QueueService
+vi.mock('fs', () => ({
+    default: {
+        promises: {
+            writeFile: vi.fn(),
+            readFile: vi.fn(),
+            readdir: vi.fn().mockResolvedValue([]),
+            stat: vi.fn().mockResolvedValue({ isDirectory: () => false }),
+            appendFile: vi.fn().mockResolvedValue(undefined),
+        },
+        existsSync: vi.fn(),
+        mkdirSync: vi.fn(),
+        writeFileSync: vi.fn(),
+        readdirSync: vi.fn().mockReturnValue([]),
+        unlinkSync: vi.fn(),
+        statSync: vi.fn().mockReturnValue({ isDirectory: () => false }),
+    }
+}));
 
 // Mock GitService instance methods
 const mocks = vi.hoisted(() => ({
@@ -29,6 +47,7 @@ vi.mock('../../server/services/gitService', () => {
 describe('PatchService', () => {
     const dataDir = 'root/data';
     const mockedFileService = vi.mocked(fileService);
+    const mockedQueueService = vi.mocked(queueService);
     const mockedFs = vi.mocked(fs);
 
     beforeEach(() => {
@@ -40,75 +59,17 @@ describe('PatchService', () => {
         mockedFs.writeFileSync.mockReturnValue(undefined);
         mockedFs.readdirSync.mockReturnValue([]);
         mockedFs.unlinkSync.mockReturnValue(undefined);
-    });
 
-    describe('Queue Operations', () => {
-        it('getQueue returns empty array if no file', async () => {
-            mockedFileService.exists.mockResolvedValue(false);
-            const queue = await patchService.getQueue(dataDir);
-            expect(queue).toEqual([]);
-        });
-
-        it('getQueue returns queue content', async () => {
-            const mockQueue = [{ target_id: 'c1' }];
-            mockedFileService.exists.mockResolvedValue(true);
-            mockedFileService.readJson.mockResolvedValue(mockQueue);
-            
-            const queue = await patchService.getQueue(dataDir);
-            expect(queue).toEqual(mockQueue);
-        });
-
-        it('addToQueue adds item and returns updated queue', async () => {
-            const change: any = { target_id: 'u1', field: 'name', new: 'B' };
-            mockedFileService.exists.mockResolvedValue(false); // New queue
-
-            const queue = await patchService.addToQueue(dataDir, change);
-
-            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
-                expect.stringMatching(/queue\.json/),
-                expect.arrayContaining([expect.objectContaining({ target_id: 'u1', timestamp: expect.any(String) })])
-            );
-            expect(queue).toHaveLength(1);
-        });
-
-        it('removeFromQueue removes item at index', async () => {
-            const mockQueue: any[] = [{ target_id: 'c1' }, { target_id: 'c2' }];
-            mockedFileService.exists.mockResolvedValue(true);
-            mockedFileService.readJson.mockResolvedValue([...mockQueue]);
-
-            const queue = await patchService.removeFromQueue(dataDir, 0);
-
-            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
-                expect.stringMatching(/queue\.json/),
-                [{ target_id: 'c2' }] // c1 removed
-            );
-            expect(queue).toHaveLength(1);
-        });
-
-        it('updateQueueItem modifies item at index', async () => {
-            const mockQueue: any[] = [{ target_id: 'c1', val: 'old' }];
-            mockedFileService.exists.mockResolvedValue(true);
-            mockedFileService.readJson.mockResolvedValue([...mockQueue]);
-
-            const change: any = { target_id: 'c1', val: 'new' };
-            await patchService.updateQueueItem(dataDir, 0, change);
-
-            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
-                expect.stringMatching(/queue\.json/),
-                [{ target_id: 'c1', val: 'new' }]
-            );
-        });
+        // Default QueueService mocks
+        mockedQueueService.readQueueSafe.mockResolvedValue([]);
     });
 
     describe('Commit Logic', () => {
         it('commitPatch creates new patch and clears queue', async () => {
             // Queue has 1 item
+            mockedQueueService.readQueueSafe.mockResolvedValue([{ target_id: 'u1', field: 'name', new: 'B' } as any]);
             mockedFileService.exists.mockResolvedValue(true);
-            mockedFileService.readJson.mockImplementation(async (path: string) => {
-                if (path.includes('queue.json')) return [{ target_id: 'u1', field: 'name', new: 'B' }];
-                if (path.includes('patches.json')) return []; 
-                return [];
-            });
+            mockedFileService.readJson.mockResolvedValue([]); // No existing patches
 
             await patchService.commitPatch(dataDir, 'Patch 1.0', '1.0', 'balance', ['nerf']);
 
@@ -119,17 +80,23 @@ describe('PatchService', () => {
                     expect.objectContaining({ version: '1.0', changes: expect.any(Array) })
                 ])
             );
-            // Expect queue clear
+            // Expect queue clear (queue.json written with empty array)
             expect(mockedFileService.writeJson).toHaveBeenCalledWith(
                 expect.stringMatching(/queue\.json/),
                 []
             );
             // Expect git commit
             expect(mocks.commitPatch).toHaveBeenCalled();
+            
+            // Expect backup
+            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
+                expect.stringMatching(/queue_backups/),
+                expect.anything()
+            );
         });
 
         it('quickSave creates immediate patch', async () => {
-            const change: any = { target_id: 'u1', name: 'Quick Fix' };
+            const change: any = { target_id: 'u1', name: 'Quick Fix', field: 'hp', old: 100, new: 120 };
             mockedFileService.exists.mockResolvedValue(false);
 
             await patchService.quickSave(dataDir, change, 'quick', ['fix']);

@@ -1,6 +1,6 @@
 import { AppView } from '@/types';
 import { AppSidebar } from './AppSidebar';
-import { EntityListHash } from '../grimoire/EntityList';
+import { EntityListHash } from "@/types";
 
 interface DesktopAppLayoutProps {
     view: AppView;
@@ -12,10 +12,11 @@ interface DesktopAppLayoutProps {
     onSelectCategory: (category: string) => void;
     pendingChanges: number;
     queuedIds: Set<string>;
+    onRefresh: () => void;
 }
 
 export function DesktopAppLayout({ 
-    view, setView, items, selectedUnit, onSelectUnit, currentCategory, onSelectCategory, pendingChanges, queuedIds
+    view, setView, items, selectedUnit, onSelectUnit, currentCategory, onSelectCategory, pendingChanges, queuedIds, onRefresh
 }: DesktopAppLayoutProps) {
     return (
         <div className="hidden md:block w-72 h-full z-20 relative shrink-0">
@@ -29,6 +30,7 @@ export function DesktopAppLayout({
                 onSelectCategory={onSelectCategory}
                 pendingChanges={pendingChanges}
                 queuedIds={queuedIds}
+                onRefresh={onRefresh}
              />
         </div>
     );

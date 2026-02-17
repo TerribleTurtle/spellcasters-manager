@@ -27,10 +27,13 @@ export const getHealth = async (req: Request, res: Response) => {
             version
         });
     } catch (error) {
+        const err = error as Error;
+        // 503 Service Unavailable
         res.status(503).json({ 
             status: 'unhealthy', 
             timestamp: new Date().toISOString(),
-            error: (error as Error).message
+            error: err.message
         });
+        // We don't use next(error) here because we want to return a specific 503 health check response structure
     }
 };

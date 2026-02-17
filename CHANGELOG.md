@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-02-17
+
+### Fixed
+
+- **Deploy:** Resolved 27 TypeScript errors (strict type narrowing).
+- **Tests:** Stabilized flaky backup integration test.
+- **Code:** Removed dead "Quick Save" legacy code.
+- **Docs:** Comprehensive update to `USER_GUIDE.md` and `.env.example`.
+
 ## [1.0.1] - 2026-02-16
 
 ### Fixed

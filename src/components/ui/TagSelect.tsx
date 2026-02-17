@@ -27,14 +27,15 @@ export function TagSelect({ value, onChange }: TagSelectProps) {
   const [customValue, setCustomValue] = useState("");
 
   // Check if initial value is a preset
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => {
      const isPreset = TAGS.some(t => t.value === value);
      if (value && !isPreset) {
-         // This is a valid use case for syncing props to state (mode switch)
-         // We suppress the warning because we *want* the render to update if props force a custom value
-         setIsCustom(true);
-         setCustomValue(value);
+         // Defer to avoid render cycle warning
+         setTimeout(() => {
+             setIsCustom(true);
+             setCustomValue(value);
+         }, 0);
      }
   }, [value]);
 
@@ -77,7 +78,7 @@ export function TagSelect({ value, onChange }: TagSelectProps) {
   }
 
   return (
-    <Select value={TAGS.some(t => t.value === value) ? value : "custom_input_option"} onValueChange={handleSelectChange}>
+    <Select value={TAGS.some(t => t.value === value) ? value : (value ? "custom_input_option" : undefined)} onValueChange={handleSelectChange}>
       <SelectTrigger className="w-[120px] h-9 text-xs">
         <SelectValue placeholder="Select Tag" />
       </SelectTrigger>

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import express, { Express } from 'express';
-import { saveBatch } from '../../server/controllers/dataController';
+import { saveBatch, validatePath } from '../../server/controllers/dataController';
 import { fileService } from '../../server/services/fileService';
 
 vi.mock('../../server/services/fileService');
@@ -13,7 +13,7 @@ app.use((req, res, next) => {
     (req as any).context = { dataDir: 'root/data', mode: 'dev' };
     next();
 });
-app.post('/api/data/:category/batch', saveBatch);
+app.post('/api/data/:category/batch', validatePath, saveBatch);
 
 describe('Integration: Batch Save', () => {
     beforeEach(() => {
@@ -34,7 +34,8 @@ describe('Integration: Batch Save', () => {
         expect(res.body.success).toBe(true);
         expect(res.body.results).toHaveLength(2);
         
-        expect(fileService.writeJson).toHaveBeenCalledTimes(2);
+        // +1 for patches.json (audit log)
+        expect(fileService.writeJson).toHaveBeenCalledTimes(3);
     });
 
     it('should handle partial failure', async () => {

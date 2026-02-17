@@ -1,23 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as QueueController from '../../server/controllers/queueController';
-import { patchService } from '../../server/services/patchService';
+import { queueService } from '../../server/services/queueService';
 import { Response } from 'express';
 import { createMockRequest, MockRequest } from '../helpers/mockRequest';
 
 // Mock PatchService
-vi.mock('../../server/services/patchService');
+vi.mock('../../server/services/queueService');
 
 describe('QueueController', () => {
     let mockReq: MockRequest;
     let mockRes: Partial<Response>;
     let jsonSpy: any;
     let statusSpy: any;
+    let nextSpy: any;
 
-    const mockedPatchService = vi.mocked(patchService);
+    const mockedQueueService = vi.mocked(queueService);
 
     beforeEach(() => {
         vi.clearAllMocks();
         jsonSpy = vi.fn();
+        nextSpy = vi.fn();
         statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
         mockRes = {
             json: jsonSpy,
@@ -30,71 +32,80 @@ describe('QueueController', () => {
         });
     });
 
-    it('getQueue delegates to patchService', async () => {
+    it('getQueue delegates to queueService', async () => {
         const mockQueue = [{ target_id: 'c1' }];
-        mockedPatchService.getQueue.mockResolvedValue(mockQueue);
+        mockedQueueService.getQueue.mockResolvedValue(mockQueue);
         
-        await QueueController.getQueue(mockReq, mockRes as Response);
+        await QueueController.getQueue(mockReq, mockRes as Response, nextSpy);
 
-        expect(patchService.getQueue).toHaveBeenCalledWith('root/data');
+        expect(queueService.getQueue).toHaveBeenCalledWith('root/data');
         expect(jsonSpy).toHaveBeenCalledWith(mockQueue);
     });
 
-    it('addToQueue delegates to patchService', async () => {
+    it('addToQueue delegates to queueService', async () => {
         mockReq.body = { change: { target_id: 'u1' } };
         // Service returns the new queue array
-        mockedPatchService.addToQueue.mockResolvedValue([{}, {}]); 
+        mockedQueueService.addToQueue.mockResolvedValue([{}, {}]); 
         
-        await QueueController.addToQueue(mockReq, mockRes as Response);
+        await QueueController.addToQueue(mockReq, mockRes as Response, nextSpy);
 
-        expect(patchService.addToQueue).toHaveBeenCalledWith('root/data', expect.anything());
+        expect(queueService.addToQueue).toHaveBeenCalledWith('root/data', expect.anything());
         // Controller returns { success: true, queueLength: 2 }
         expect(jsonSpy).toHaveBeenCalledWith(expect.objectContaining({ success: true, queueLength: 2 }));
     });
 
     it('addToQueue returns 400 if change missing', async () => {
         mockReq.body = {};
-        await QueueController.addToQueue(mockReq, mockRes as Response);
-        expect(statusSpy).toHaveBeenCalledWith(400);
+        await QueueController.addToQueue(mockReq, mockRes as Response, nextSpy);
+        expect(nextSpy).toHaveBeenCalledWith(expect.objectContaining({ 
+            message: "Change object required",
+            code: "BAD_REQUEST" 
+        }));
+        expect(statusSpy).not.toHaveBeenCalled();
     });
 
-    it('updateQueueItem delegates to patchService', async () => {
+    it('updateQueueItem delegates to queueService', async () => {
         mockReq.body = { index: 0, change: {} };
-        mockedPatchService.updateQueueItem.mockResolvedValue({ success: true });
+        mockedQueueService.updateQueueItem.mockResolvedValue({ success: true } as any);
 
-        await QueueController.updateQueueItem(mockReq, mockRes as Response);
-        expect(patchService.updateQueueItem).toHaveBeenCalledWith('root/data', 0, {});
+        await QueueController.updateQueueItem(mockReq, mockRes as Response, nextSpy);
+        expect(queueService.updateQueueItem).toHaveBeenCalledWith('root/data', 0, {});
         expect(jsonSpy).toHaveBeenCalledWith({ success: true });
     });
 
     it('updateQueueItem handles not found error', async () => {
         mockReq.body = { index: 99, change: {} };
-        mockedPatchService.updateQueueItem.mockRejectedValue(new Error("Queue item not found"));
+        mockedQueueService.updateQueueItem.mockRejectedValue(new Error("Queue item not found"));
 
-        await QueueController.updateQueueItem(mockReq, mockRes as Response);
-        expect(statusSpy).toHaveBeenCalledWith(404);
-        expect(jsonSpy).toHaveBeenCalledWith({ error: "Queue item not found" });
+        await QueueController.updateQueueItem(mockReq, mockRes as Response, nextSpy);
+        expect(nextSpy).toHaveBeenCalledWith(expect.objectContaining({ message: "Queue item not found" }));
     });
 
-    it('bulkRemoveFromQueue delegates to patchService and handles success', async () => {
+    it('bulkRemoveFromQueue delegates to queueService and handles success', async () => {
         mockReq.body = { indices: [0, 1] };
         // Service returns the new queue array
-        mockedPatchService.bulkRemoveFromQueue.mockResolvedValue([{}, {}, {}]); 
+        mockedQueueService.bulkRemoveFromQueue.mockResolvedValue([{}, {}, {}]); 
         
-        await QueueController.bulkRemoveFromQueue(mockReq, mockRes as Response);
+        await QueueController.bulkRemoveFromQueue(mockReq, mockRes as Response, nextSpy);
 
-        expect(patchService.bulkRemoveFromQueue).toHaveBeenCalledWith('root/data', [0, 1]);
+        expect(queueService.bulkRemoveFromQueue).toHaveBeenCalledWith('root/data', [0, 1]);
         // Controller returns { success: true, queueLength: 3 }
         expect(jsonSpy).toHaveBeenCalledWith({ success: true, queueLength: 3 });
     });
 
     it('bulkRemoveFromQueue returns 400 for invalid input', async () => {
         mockReq.body = { indices: [] }; // Empty
-        await QueueController.bulkRemoveFromQueue(mockReq, mockRes as Response);
-        expect(statusSpy).toHaveBeenCalledWith(400);
+        await QueueController.bulkRemoveFromQueue(mockReq, mockRes as Response, nextSpy);
+        expect(nextSpy).toHaveBeenCalledWith(expect.objectContaining({ 
+            message: "Non-empty indices array required",
+            code: "BAD_REQUEST" 
+        }));
 
         mockReq.body = {}; // Missing
-        await QueueController.bulkRemoveFromQueue(mockReq, mockRes as Response);
-        expect(statusSpy).toHaveBeenCalledWith(400);
+        await QueueController.bulkRemoveFromQueue(mockReq, mockRes as Response, nextSpy);
+        expect(nextSpy).toHaveBeenCalledWith(expect.objectContaining({ 
+            message: "Non-empty indices array required",
+            code: "BAD_REQUEST" 
+        }));
     });
 });

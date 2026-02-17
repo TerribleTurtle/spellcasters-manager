@@ -1,12 +1,13 @@
 import { Control } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { AppMode } from "@/types";
 import { VisualAssetHelpers } from "../VisualAssetHelpers";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
-export function UnitHeaderPanel({ control, mode, onIconUpload, unitName, onDelete }: { control: Control<any>, mode: AppMode, onIconUpload: (f:string)=>void, unitName: string, onDelete?: () => void }) {
+import { FieldValues } from "react-hook-form";
+
+export function UnitHeaderPanel({ control, onIconUpload, unitName, onDelete, displayIcon }: { control: Control<FieldValues>, onIconUpload: (f:string)=>void, unitName: string, onDelete?: () => void, displayIcon?: string }) {
   return (
     <div className="flex items-center gap-4 p-4 border border-border/50 rounded-lg bg-card/40 backdrop-blur-sm shadow-sm mb-4">
        
@@ -18,8 +19,7 @@ export function UnitHeaderPanel({ control, mode, onIconUpload, unitName, onDelet
             render={({ field }) => (
                <VisualAssetHelpers 
                   unitName={unitName}
-                  currentIcon={field.value}
-                  mode={mode}
+                  currentIcon={field.value || displayIcon}
                   onUpload={onIconUpload}
                   compact // Pass a prop if VisualAssetHelpers supports it, or it will just fit the container
                />

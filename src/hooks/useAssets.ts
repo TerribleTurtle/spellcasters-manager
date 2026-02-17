@@ -1,10 +1,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { assetService } from '@/services/AssetService';
-import { AppMode } from '@/types';
 import { useToast } from '@/components/ui/toast-context';
 
-export function useAssets(mode: AppMode) {
+export function useAssets() {
     const [assets, setAssets] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const { error } = useToast();
@@ -12,7 +11,7 @@ export function useAssets(mode: AppMode) {
     const refresh = useCallback(async () => {
         setIsLoading(true);
         try {
-            const list = await assetService.list(mode);
+            const list = await assetService.list();
             setAssets(list);
         } catch (err) {
 
@@ -20,7 +19,7 @@ export function useAssets(mode: AppMode) {
         } finally {
             setIsLoading(false);
         }
-    }, [mode, error]);
+    }, [error]);
 
     useEffect(() => {
         refresh();

@@ -1,0 +1,14 @@
+import { UnitEditor } from "@/components/editors/UnitEditor";
+import { HeroEditor } from "@/components/editors/HeroEditor";
+import { ConsumableEditor } from "@/components/editors/ConsumableEditor";
+import { EditorProps } from "@/components/editors/editorConfig";
+import { EntityCategory } from "@/config/entityRegistry";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyEditorComponent = React.ComponentType<any>;
+
+export const EDITOR_MAP: Partial<Record<EntityCategory | string, React.ComponentType<EditorProps>>> = {
+    'units': UnitEditor as AnyEditorComponent, 'unit': UnitEditor as AnyEditorComponent, 'structure': UnitEditor as AnyEditorComponent, 'titans': UnitEditor as AnyEditorComponent,
+    'heroes': HeroEditor as AnyEditorComponent, 'hero': HeroEditor as AnyEditorComponent,
+    'items': ConsumableEditor as AnyEditorComponent, 'consumables': ConsumableEditor as AnyEditorComponent, 'consumable': ConsumableEditor as AnyEditorComponent, 'spells': ConsumableEditor as AnyEditorComponent, 'spell': ConsumableEditor as AnyEditorComponent
+};

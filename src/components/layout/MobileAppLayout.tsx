@@ -1,6 +1,6 @@
 import { AppView } from '@/types';
 import { AppSidebar } from './AppSidebar';
-import { EntityListHash } from '../grimoire/EntityList';
+import { EntityListHash } from "@/types";
 
 interface MobileAppLayoutProps {
     isOpen: boolean;
@@ -14,10 +14,11 @@ interface MobileAppLayoutProps {
     onSelectCategory: (category: string) => void;
     pendingChanges: number;
     queuedIds: Set<string>;
+    onRefresh: () => void;
 }
 
 export function MobileAppLayout({ 
-    isOpen, onClose, view, setView, items, selectedUnit, onSelectUnit, currentCategory, onSelectCategory, pendingChanges, queuedIds
+    isOpen, onClose, view, setView, items, selectedUnit, onSelectUnit, currentCategory, onSelectCategory, pendingChanges, queuedIds, onRefresh
 }: MobileAppLayoutProps) {
     if (!isOpen) return null;
 
@@ -40,6 +41,7 @@ export function MobileAppLayout({
                     }}
                     pendingChanges={pendingChanges}
                     queuedIds={queuedIds}
+                    onRefresh={onRefresh}
                 />
             </div>
         </div>

@@ -4,14 +4,12 @@ import { PreviewCard } from "./PreviewCard";
 import { PreviewDetailPage } from "./PreviewDetailPage";
 import { TabBar } from "@/components/ui/TabBar";
 import { Square, FileText } from "lucide-react";
-import { AppMode } from "@/types";
 
 interface SitePreviewProps {
   data: Unit;
-  mode: AppMode;
 }
 
-export function SitePreview({ data, mode }: SitePreviewProps) {
+export function SitePreview({ data }: SitePreviewProps) {
   const [activeTab, setActiveTab] = useState<string>("page");
 
   const tabItems = [
@@ -23,7 +21,7 @@ export function SitePreview({ data, mode }: SitePreviewProps) {
                 <span className="hidden sm:inline">Archive Card</span>
                 <span className="sm:hidden">Card</span>
             </div>
-        ) as any
+        )
     },
     { 
         value: "page", 
@@ -33,7 +31,7 @@ export function SitePreview({ data, mode }: SitePreviewProps) {
                 <span className="hidden sm:inline">Detail Page</span>
                 <span className="sm:hidden">Page</span>
             </div>
-        ) as any
+        )
     }
   ];
 
@@ -53,7 +51,7 @@ export function SitePreview({ data, mode }: SitePreviewProps) {
             <div className="h-full overflow-y-auto p-6 focus-visible:outline-none">
                 <div className="flex flex-col items-center justify-center min-h-[300px] h-full space-y-8">
                     <div className="w-full max-w-[320px]">
-                        <PreviewCard data={data} mode={mode} />
+                        <PreviewCard data={data} />
                     </div>
                     <p className="text-muted-foreground text-sm text-center max-w-xs">
                         This is how the unit appears in the main unit archive grid.
@@ -64,7 +62,7 @@ export function SitePreview({ data, mode }: SitePreviewProps) {
 
         {activeTab === "page" && (
             <div className="h-full overflow-y-auto px-6 py-4 focus-visible:outline-none custom-scrollbar">
-                 <PreviewDetailPage data={data} mode={mode} />
+                 <PreviewDetailPage data={data} />
             </div>
         )}
       </div>

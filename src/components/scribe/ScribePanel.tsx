@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Change, PatchType, AppMode } from "@/types"
+import { Change, PatchType } from "@/types"
 import { patchService } from "@/services/PatchService"
 import { useToast } from "@/components/ui/toast-context"
 import { Scroll, RefreshCcw, Sparkles, Plus, Loader2, Trash2 } from "lucide-react"
@@ -34,12 +34,12 @@ import {
 } from "@/components/ui/alert-dialog"
 
 interface ScribePanelProps {
-  mode: AppMode;
   refreshTrigger?: number;
   onOpenInEditor?: (change: Change) => void;
+  onQueueChange?: () => void;
 }
 
-export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: ScribePanelProps) {
+export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange }: ScribePanelProps) {
   const [changes, setChanges] = useState<Change[]>([]);
 
   const [activeTab, setActiveTab] = useState<'draft' | 'history'>('draft');
@@ -54,19 +54,10 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
   const { success, error } = useToast();
 
   const fetchQueue = useCallback(() => {
-    patchService.getQueue(mode)
+    patchService.getQueue()
       .then(newChanges => {
-         // Merge logic: Preserve tags/category if target_id and field match
-         setChanges(prev => {
-             const merged = newChanges.map(nc => {
-                 const existing = prev.find(p => p.target_id === nc.target_id && p.field === nc.field);
-                 if (existing) {
-                     return { ...nc, tags: existing.tags, category: existing.category, reason: existing.reason };
-                 }
-                 return nc;
-             });
-             return merged;
-         });
+         setChanges(newChanges);
+         onQueueChange?.();
       })
       .catch(() => {
           // Silent or toast if critical
@@ -75,7 +66,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
           // Clear selection on refresh to avoid index mismatch
           setSelectedIndices(new Set());
       });
-  }, [mode]);
+  }, [onQueueChange]);
 
   const toggleSelection = (index: number) => {
       const next = new Set(selectedIndices);
@@ -95,7 +86,6 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
 
   const handleBulkRemove = async () => {
       if (selectedIndices.size === 0) return;
-      // Replaced confirm with AlertDialog state
       setBulkRemoveOpen(true);
   };
 
@@ -104,7 +94,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
       setLoading(true);
       try {
           const indices = Array.from(selectedIndices);
-          await patchService.bulkRemoveFromQueue(mode, indices);
+          await patchService.bulkRemoveFromQueue(indices);
           success(`Removed ${indices.length} items`);
           fetchQueue(); // Reloads and clears selection
       } catch {
@@ -121,9 +111,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
 
   useEffect(() => {
     fetchQueue();
-    if(activeTab === 'history') {
-        // HistoryGrid handles its own fetching
-    }
+
   }, [fetchQueue, refreshTrigger, activeTab]);
 
   const handlePublish = async () => {
@@ -131,7 +119,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
     try {
       const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
       // Pass the enriched changes to the backend
-      const data = await patchService.commit(mode, { 
+      const data = await patchService.commit({ 
           title, 
           version, 
           type, 
@@ -225,8 +213,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
                     <div key={idx} className="w-full">
                         <DiffCard 
                            change={change} 
-                           index={idx} 
-                           mode={mode} 
+                           index={idx}
                            onUpdate={fetchQueue} 
                            onOpenInEditor={onOpenInEditor} 
                            isSelected={selectedIndices.has(idx)}
@@ -236,7 +223,7 @@ export function ScribePanel({ mode, refreshTrigger = 0, onOpenInEditor }: Scribe
                  ))
              )
           ) : (
-             <HistoryGrid mode={mode} />
+             <HistoryGrid />
           )}
         </div>
       </div>

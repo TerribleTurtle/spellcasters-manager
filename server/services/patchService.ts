@@ -1,11 +1,14 @@
 import path from 'path';
-import fs from 'fs';
 import { fileService } from './fileService.js';
 import { gitService } from './gitService.js';
-import { Change, Patch, PatchType } from '../../src/domain/schemas.js';
-import { stripInternalFields } from '../../src/domain/utils.js';
+import { publisherService } from './publisherService.js';
+import { backupService } from './backupService.js';
+import { queueService } from './queueService.js';
+import { Change, ChangeSchema, Patch, PatchType } from '../../src/domain/schemas/index.js';
 import { logger } from '../utils/logger.js';
 import { auditLogger } from '../utils/auditLogger.js';
+import { AppError } from '../utils/AppError.js';
+import { ensureJsonExt } from '../utils/pathUtils.js';
 
 export class PatchService {
     private gitService: typeof gitService;
@@ -14,129 +17,85 @@ export class PatchService {
         this.gitService = gitService;
     }
 
-    /**
-     * Reads the current queue of pending changes from queue.json.
-     * Returns an empty array if the file doesn't exist or is invalid.
-     */
     async readQueueSafe(dataDir: string): Promise<Change[]> {
-        const queueFile = path.join(dataDir, 'queue.json');
-        if (await fileService.exists(queueFile)) {
-            try {
-                return await fileService.readJson<Change[]>(queueFile);
-            } catch (e) {
-                if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
-                    logger.warn("Failed to read queue.json", { error: e });
-                }
-                return [];
-            }
-        }
-        return [];
-    }
-
-    async getQueue(dataDir: string): Promise<Change[]> {
-        return this.readQueueSafe(dataDir);
-    }
-
-    async addToQueue(dataDir: string, change: Change): Promise<Change[]> {
-        const queueFile = path.join(dataDir, 'queue.json');
-        const queue = await this.readQueueSafe(dataDir);
-        
-        const timestampedChange = { ...change, timestamp: new Date().toISOString() };
-        queue.push(timestampedChange);
-        
-        await fileService.writeJson(queueFile, queue);
-        auditLogger.logAction(dataDir, 'QUEUE_ADD', { change: timestampedChange });
-        return queue;
-    }
-
-    async updateQueueItem(dataDir: string, index: number, change: Change): Promise<Change[]> {
-        const queueFile = path.join(dataDir, 'queue.json');
-        const queue = await this.readQueueSafe(dataDir);
-
-        if (index < 0 || index >= queue.length) {
-            throw new Error("Queue item not found");
-        }
-
-        queue[index] = change;
-        await fileService.writeJson(queueFile, queue);
-        auditLogger.logAction(dataDir, 'QUEUE_UPDATE', { index, change });
-        return queue;
-    }
-
-    async removeFromQueue(dataDir: string, index: number): Promise<Change[]> {
-        const queueFile = path.join(dataDir, 'queue.json');
-        const queue = await this.readQueueSafe(dataDir);
-
-        if (index < 0 || index >= queue.length) {
-            throw new Error("Queue item not found");
-        }
-
-        queue.splice(index, 1);
-        await fileService.writeJson(queueFile, queue);
-        auditLogger.logAction(dataDir, 'QUEUE_REMOVE', { index });
-        return queue;
-    }
-
-    async bulkRemoveFromQueue(dataDir: string, indices: number[]): Promise<Change[]> {
-        const queueFile = path.join(dataDir, 'queue.json');
-        const queue = await this.readQueueSafe(dataDir);
-
-        // Sort descending to prevent index shifting during splice
-        const sortedIndices = [...indices].sort((a, b) => b - a);
-        const maxIdx = queue.length - 1;
-
-        // Validation
-        for (const idx of sortedIndices) {
-            if (idx < 0 || idx > maxIdx) {
-                 throw new Error(`Queue index ${idx} out of bounds (length: ${queue.length})`);
-            }
-        }
-
-        // Remove
-        for (const idx of sortedIndices) {
-            queue.splice(idx, 1);
-        }
-
-        await fileService.writeJson(queueFile, queue);
-        auditLogger.logAction(dataDir, 'QUEUE_REMOVE_BULK', { indices: sortedIndices, count: sortedIndices.length });
-        return queue;
+        // Delegated to QueueService, but kept here privately if needed by commitPatch or similar?
+        // Actually commitPatch needs it. Let's import QueueService here too or keep a helper.
+        // Better: Import queueService.
+        return queueService.readQueueSafe(dataDir);
     }
 
     async quickSave(dataDir: string, change: Change, version: string, tags: string[] = []): Promise<Patch> {
+        // 1. Create the patch entry on disk
+        const patchEntry = await this.recordPatch(dataDir, `Quick Save: ${change.name} (${change.field})`, 'Hotfix', [change], tags, version || 'quick');
+
+        // 2. Commit it
+        const patchesFile = path.join(dataDir, 'patches.json');
+        
+        // Stage only the files we actually touched
+        const touchedFiles = [patchesFile];
+        // The entity file was already saved by saveData before quickSave was called
+        if (change.category) {
+            const entityFile = path.join(dataDir, change.category, 
+                ensureJsonExt(change.target_id));
+            touchedFiles.push(entityFile);
+        }
+
+        // Capture git diff before committing
+        const diff = await this.gitService.getStagedDiff(dataDir, touchedFiles);
+        if (diff) {
+             patchEntry.diff = diff;
+             // Update patch on disk with diff
+             const patches = await fileService.readJson<Patch[]>(patchesFile);
+             const idx = patches.findIndex(p => p.id === patchEntry.id);
+             if (idx !== -1) {
+                 patches[idx] = patchEntry;
+                 await fileService.writeJson(patchesFile, patches);
+             }
+        }
+
+        await this.gitService.commitPatch(dataDir, patchEntry, `[QUICK] ${patchEntry.title}`, touchedFiles);
+        auditLogger.logAction(dataDir, 'PATCH_QUICKSAVE', { patchId: patchEntry.id, title: patchEntry.title });
+        return patchEntry;
+    }
+
+    /**
+     * Records a patch entry to patches.json WITHOUT committing to git.
+     * This ensures an audit trail for every filesystem change.
+     */
+    async recordPatch(dataDir: string, title: string, type: PatchType, changes: Change[], tags: string[] = [], version: string = 'auto'): Promise<Patch> {
+        // Validate changes
+        for (const change of changes) {
+            const parseResult = ChangeSchema.safeParse(change);
+            if (!parseResult.success) {
+                throw AppError.badRequest('Invalid change object', {
+                    fields: parseResult.error.issues.map(e => ({ path: e.path.join('.'), message: e.message }))
+                });
+            }
+        }
+
         const patchEntry: Patch = {
             id: `patch_${Date.now()}`,
-            version: version || 'quick',
-            type: 'Hotfix',
-            title: `Quick Save: ${change.name} (${change.field})`,
+            version: version,
+            type,
+            title,
             date: new Date().toISOString().split('T')[0],
             tags: tags,
-            changes: [change]
+            changes: changes
         };
 
         const patchesFile = path.join(dataDir, 'patches.json');
         let patches: Patch[] = [];
 
         if (await fileService.exists(patchesFile)) {
+            // SAFETY: Backup patches.json before appending
+            // Only back up if we aren't already in a massive batch operation? 
+            // For now, safety first.
+            await backupService.backupFile(dataDir, patchesFile);
             patches = await fileService.readJson<Patch[]>(patchesFile);
         }
         patches.unshift(patchEntry);
         await fileService.writeJson(patchesFile, patches);
-
-        // Stage only the files we actually touched
-        const touchedFiles = [patchesFile];
-        // The entity file was already saved by saveData before quickSave was called
-        if (change.category) {
-            const entityFile = path.join(dataDir, change.category, 
-                change.target_id.endsWith('.json') ? change.target_id : `${change.target_id}.json`);
-            touchedFiles.push(entityFile);
-        }
-
-        // Capture git diff before committing
-        const diff = await this.gitService.getStagedDiff(dataDir, touchedFiles);
-        if (diff) patchEntry.diff = diff;
-
-        await this.gitService.commitPatch(dataDir, patchEntry, `[QUICK] ${patchEntry.title}`, touchedFiles);
-        auditLogger.logAction(dataDir, 'PATCH_QUICKSAVE', { patchId: patchEntry.id, title: patchEntry.title });
+        
         return patchEntry;
     }
 
@@ -150,7 +109,7 @@ export class PatchService {
         const finalChanges = await this.readQueueSafe(dataDir);
 
         if (finalChanges.length === 0) {
-            throw new Error("No queued changes to commit");
+            throw AppError.badRequest("No queued changes to commit");
         }
 
         let patches: Patch[] = [];
@@ -190,26 +149,9 @@ export class PatchService {
             patches.unshift(patchEntry);
         }
 
-        // Backup Queue
-        if (finalChanges.length > 0) {
-            try {
-                const backupDir = path.join(dataDir, 'queue_backups');
-                await fileService.ensureDir(backupDir);
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                const backupFile = path.join(backupDir, `queue_backup_${timestamp}.json`);
-                await fileService.writeJson(backupFile, finalChanges);
 
-                const files = await fileService.listFiles(backupDir, ['.json']);
-                const sortedFiles = files.filter(f => f.startsWith('queue_backup_')).sort();
-                
-                while (sortedFiles.length > 5) {
-                    const toDelete = sortedFiles.shift();
-                    if (toDelete) await fileService.deleteFile(path.join(backupDir, toDelete));
-                }
-            } catch (e) {
-                logger.error("Queue Backup Failed:", { error: e });
-            }
-        }
+        // Backup Queue using BackupService
+        await backupService.backupQueue(dataDir, finalChanges);
 
         try {
             await fileService.writeJson(patchesFile, patches);
@@ -218,7 +160,7 @@ export class PatchService {
             if (dataDir.includes('spellcasters-community-api')) {
                 try {
                     const apiRoot = path.resolve(dataDir, '..');
-                    await this.publishStaticFiles(apiRoot, patches);
+                    await publisherService.publish(apiRoot, patches);
                 } catch (err) {
                     logger.error("Static File Gen Error:", { error: err });
                 }
@@ -230,7 +172,7 @@ export class PatchService {
             for (const change of finalChanges) {
                 if (change.category) {
                     const entityFile = path.join(dataDir, change.category, 
-                        change.target_id.endsWith('.json') ? change.target_id : `${change.target_id}.json`);
+                        ensureJsonExt(change.target_id));
                     touchedFiles.push(entityFile);
                 }
             }
@@ -279,11 +221,11 @@ export class PatchService {
      */
     async rollbackPatch(dataDir: string, id: string): Promise<Patch> {
         const patchesFile = path.join(dataDir, 'patches.json');
-        if (!(await fileService.exists(patchesFile))) throw new Error("No patches found");
+        if (!(await fileService.exists(patchesFile))) throw AppError.notFound("No patches found");
 
         const patches = await fileService.readJson<Patch[]>(patchesFile);
         const patchIdx = patches.findIndex(p => p.id === id);
-        if (patchIdx === -1) throw new Error("Patch not found");
+        if (patchIdx === -1) throw AppError.notFound("Patch not found");
 
         const originalPatch = patches[patchIdx];
         const invertedChanges: Change[] = [];
@@ -303,14 +245,13 @@ export class PatchService {
         }
 
         // Apply to Disk
-        const categories = (await fs.promises.readdir(dataDir))
-            .filter(async f => (await fs.promises.stat(path.join(dataDir, f))).isDirectory() && !f.startsWith('.') && f !== 'queue_backups' && f !== 'queue.json');
+        const categories = await fileService.listDirectories(dataDir, ['queue_backups']);
 
         for (const [targetId, changes] of Object.entries(fileUpdates)) {
             let filePath: string | null = null;
             
             for (const cat of categories) {
-                const p = path.join(dataDir, cat, targetId.endsWith('.json') ? targetId : `${targetId}.json`);
+                const p = path.join(dataDir, cat, ensureJsonExt(targetId));
                 if (await fileService.exists(p)) {
                     filePath = p;
                     break;
@@ -319,7 +260,7 @@ export class PatchService {
 
             if (!filePath) {
                  const cat = changes.find(c => c.category)?.category;
-                 if (cat) filePath = path.join(dataDir, cat, targetId.endsWith('.json') ? targetId : `${targetId}.json`);
+                 if (cat) filePath = path.join(dataDir, cat, ensureJsonExt(targetId));
             }
 
             if (!filePath) {
@@ -369,7 +310,7 @@ export class PatchService {
             const cat = changes.find(c => c.category)?.category;
             if (cat) {
                 touchedFiles.push(path.join(dataDir, cat, 
-                    targetId.endsWith('.json') ? targetId : `${targetId}.json`));
+                    ensureJsonExt(targetId)));
             }
         }
 
@@ -379,10 +320,19 @@ export class PatchService {
         return revertPatch;
     }
 
+    private static readonly DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
     private applyChangeToObject(obj: Record<string, unknown>, pathStr: string, value: unknown): Record<string, unknown> {
         if (!pathStr || pathStr === 'ROOT') return value as Record<string, unknown>;
         
         const parts = pathStr.split('.');
+
+        // SECURITY: Reject paths that target prototype chain
+        if (parts.some(p => PatchService.DANGEROUS_KEYS.has(p))) {
+            logger.warn(`[Security] Blocked prototype pollution attempt via path: ${pathStr}`);
+            return obj;
+        }
+
         let current: Record<string, unknown> = obj;
         
         for (let i = 0; i < parts.length - 1; i++) {
@@ -403,72 +353,12 @@ export class PatchService {
         return obj;
     }
 
-    private async publishStaticFiles(apiRoot: string, patches: Patch[]) {
-        // 1. changelog.json
-        const sanitizedPatches = stripInternalFields(patches);
-        await fileService.writeJson(path.join(apiRoot, 'changelog.json'), sanitizedPatches);
 
-        // 2. changelog_latest.json
-        if (sanitizedPatches.length > 0) {
-            await fileService.writeJson(path.join(apiRoot, 'changelog_latest.json'), sanitizedPatches[0]);
-        }
-
-        // 3. balance_index.json
-        if (patches.length > 0) {
-            const latest = patches[0];
-            const entities: Record<string, string> = {};
-            const changesByEntity: Record<string, Change[]> = {};
-            
-            latest.changes.forEach(c => {
-                 if (!changesByEntity[c.target_id]) changesByEntity[c.target_id] = [];
-                 changesByEntity[c.target_id].push(c);
-            });
-
-            for (const [id, changes] of Object.entries(changesByEntity)) {
-                 const directions = changes.map(c => c.balance_direction).filter(Boolean);
-                 if (directions.length > 0) {
-                     if (directions.includes('nerf')) entities[id] = 'nerf';
-                     else if (directions.includes('buff')) entities[id] = 'buff';
-                     else if (directions.includes('rework')) entities[id] = 'rework';
-                     else entities[id] = 'fix';
-                 } else {
-                     entities[id] = 'rework';
-                 }
-            }
-
-            const balanceIndex = {
-                patch_version: latest.version,
-                patch_date: latest.date,
-                entities
-            };
-            await fileService.writeJson(path.join(apiRoot, 'balance_index.json'), balanceIndex);
-        }
-
-        // 4. timeline
-        const timelineDir = path.join(apiRoot, 'timeline');
-        await fileService.ensureDir(timelineDir);
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const timelineMap: Record<string, any[]> = {};
-        for (let i = patches.length - 1; i >= 0; i--) {
-            const patch = patches[i];
-            for (const change of patch.changes) {
-                if (!timelineMap[change.target_id]) timelineMap[change.target_id] = [];
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const exists = timelineMap[change.target_id].find((t: any) => t.version === patch.version);
-                if (!exists && change.new) {
-                    timelineMap[change.target_id].push({
-                        version: patch.version,
-                        date: patch.date,
-                        snapshot: stripInternalFields(change.new)
-                    });
-                }
-            }
-        }
-
-        for (const [id, history] of Object.entries(timelineMap)) {
-            await fileService.writeJson(path.join(timelineDir, `${id}.json`), history);
-        }
+    /**
+     * Calculates the diff between old and new data and adds it to the queue.
+     */
+    async enqueueEntityChange(dataDir: string, newData: unknown, category: string, filename: string): Promise<void> {
+        return queueService.enqueueEntityChange(dataDir, newData, category, filename);
     }
 }
 

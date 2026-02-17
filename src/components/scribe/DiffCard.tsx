@@ -1,6 +1,6 @@
 import { Plus, Trash2, Tag, Edit2, X, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Change, AppMode, BalanceDirection } from "@/types";
+import { Change, BalanceDirection } from "@/types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +21,13 @@ import {
 interface DiffCardProps {
     change: Change;
     index?: number;
-    mode?: AppMode;
     onUpdate?: () => void;
     onOpenInEditor?: (change: Change) => void;
     isSelected?: boolean;
     onSelect?: () => void;
 }
 
-export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSelected, onSelect }: DiffCardProps) {
+export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, onSelect }: DiffCardProps) {
     const isNew = change.old === undefined || change.old === null || change.old === "";
     const isDelete = change.new === undefined || change.new === null || change.new === "";
     
@@ -40,7 +39,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
     const [loadingAction, setLoadingAction] = useState(false);
 
     const handleAddTag = async () => {
-        if (!tagInput.trim() || index === undefined || !mode) return;
+        if (!tagInput.trim() || index === undefined) return;
         
         try {
             const currentTags = change.tags || [];
@@ -52,7 +51,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
             const newTags = [...currentTags, tagInput.trim()];
             const updatedChange = { ...change, tags: newTags };
 
-            await patchService.updateQueueItem(mode, index, updatedChange);
+            await patchService.updateQueueItem(index, updatedChange);
             setTagInput("");
             if (onUpdate) onUpdate();
             success("Tag added");
@@ -62,14 +61,14 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
     };
 
     const handleRemoveTag = async (tagToRemove: string) => {
-        if (index === undefined || !mode) return;
+        if (index === undefined) return;
 
         try {
             const currentTags = change.tags || [];
             const newTags = currentTags.filter(t => t !== tagToRemove);
             const updatedChange = { ...change, tags: newTags };
 
-            await patchService.updateQueueItem(mode, index, updatedChange);
+            await patchService.updateQueueItem(index, updatedChange);
             if (onUpdate) onUpdate();
             success("Tag removed");
         } catch {
@@ -78,7 +77,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
     };
 
     const handleRemoveChange = () => {
-        if (index === undefined || !mode) return;
+        if (index === undefined) return;
         setShowRemoveConfirm(true);
     };
 
@@ -86,7 +85,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
         e.preventDefault();
         setLoadingAction(true);
         try {
-            await patchService.removeFromQueue(mode!, index!);
+            await patchService.removeFromQueue(index!);
             if (onUpdate) onUpdate();
             success("Change removed from queue");
             setShowRemoveConfirm(false);
@@ -98,7 +97,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
     };
 
     const handleOpenEditor = () => {
-        if (index === undefined || !mode || !onOpenInEditor) return;
+        if (index === undefined || !onOpenInEditor) return;
         setShowEditorConfirm(true);
     };
 
@@ -107,7 +106,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
         setLoadingAction(true);
         try {
             // 1. Remove from Queue
-            await patchService.removeFromQueue(mode!, index!);
+            await patchService.removeFromQueue(index!);
             // 2. Refresh list (optional but good for sync)
             if (onUpdate) onUpdate();
             // 3. Open
@@ -122,11 +121,12 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
     };
 
     const handleBalanceChange = async (direction: BalanceDirection) => {
-        if (index === undefined || !mode) return;
+        if (index === undefined) return;
         try {
             const updatedChange = { ...change, balance_direction: direction };
-            await patchService.updateQueueItem(mode, index, updatedChange);
+            await patchService.updateQueueItem(index, updatedChange);
             if (onUpdate) onUpdate();
+            success("Balance direction updated");
         } catch {
             error("Failed to update balance direction");
         }
@@ -137,6 +137,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
         nerf: 'text-red-500 bg-red-500/10 border-red-500/30',
         rework: 'text-blue-500 bg-blue-500/10 border-blue-500/30',
         fix: 'text-muted-foreground bg-muted/50 border-border/50',
+        default: 'text-muted-foreground/50 border-transparent bg-transparent',
     };
 
     return (
@@ -203,12 +204,12 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
                              {(change.tags || []).map(t => (
                                  <div key={t} className="flex items-center gap-1 text-mini bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-medium border border-primary/20 group/tag">
                                      {t}
-                                     {mode && index !== undefined && (
-                                        <Button
+                                     {index !== undefined && (
+                                    <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleRemoveTag(t)}
-                                            className="h-5 w-5 p-0.5 hover:text-destructive opacity-0 group-hover/tag:opacity-100 transition-opacity focus-ring rounded-sm -mr-1"
+                                            className="h-5 w-5 p-0.5 hover:text-destructive focus-ring rounded-sm -mr-1"
                                         >
                                             <X className="w-3 h-3" />
                                         </Button>
@@ -218,23 +219,24 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
                          </div>
 
                          {/* Balance Direction Selector */}
-                         {mode && index !== undefined && (
-                             <select
-                                 value={change.balance_direction || 'rework'}
-                                 onChange={(e) => handleBalanceChange(e.target.value as BalanceDirection)}
-                                 className={cn(
-                                     "h-6 text-mini font-bold uppercase tracking-wider rounded-md border px-1.5 cursor-pointer appearance-none",
-                                     balanceColors[change.balance_direction || 'rework']
-                                 )}
-                                 title="Balance Direction"
-                             >
-                                 <option value="buff">▲ Buff</option>
-                                 <option value="nerf">▼ Nerf</option>
-                                 <option value="rework">↻ Rework</option>
-                                 <option value="fix">● Fix</option>
-                             </select>
+                         {index !== undefined && (
+                                 <select
+                                     value={change.balance_direction || ''}
+                                     onChange={(e) => handleBalanceChange(e.target.value as BalanceDirection)}
+                                     className={cn(
+                                         "h-6 text-mini font-bold uppercase tracking-wider rounded-md border px-1.5 cursor-pointer appearance-none",
+                                         balanceColors[change.balance_direction || 'default']
+                                     )}
+                                     title="Balance Direction"
+                                 >
+                                     <option value="">—</option>
+                                     <option value="buff">▲ Buff</option>
+                                     <option value="nerf">▼ Nerf</option>
+                                     <option value="rework">↻ Rework</option>
+                                     <option value="fix">● Fix</option>
+                                 </select>
                          )}
-                         {mode && index !== undefined && (
+                         {index !== undefined && (
                              <div className="flex items-center gap-1 ml-auto">
                                  {isEditingTags ? (
                                      <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-5 duration-200">
@@ -268,7 +270,7 @@ export function DiffCard({ change, index, mode, onUpdate, onOpenInEditor, isSele
                          )}
 
                         {/* Queue Actions */}
-                         {mode && index !== undefined && (
+                         {index !== undefined && (
                              <div className="flex items-center gap-1 pl-2 border-l border-border/30 ml-2">
                                  {onOpenInEditor && (
                                      <Button 

@@ -1,43 +1,14 @@
-import { useState } from 'react';
-import { AppMode, AppView } from "@/types";
+import { AppView } from "@/types";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Menu, ChevronRight, Home, Zap, Shield } from "lucide-react";
-import { HealthIndicator } from "./HealthIndicator";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { Menu, ChevronRight, Home } from "lucide-react";
 
 interface AppHeaderProps {
-    mode: AppMode;
-    setMode: (mode: AppMode) => void;
     view: AppView;
     filename: string | null;
     onToggleSidebar: () => void;
 }
 
-export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: AppHeaderProps) {
-    const [pendingMode, setPendingMode] = useState<AppMode | null>(null);
-
-    const handleModeSwitch = (newMode: AppMode) => {
-        if (newMode === mode) return; // No change
-        setPendingMode(newMode);
-    };
-
-    const confirmModeSwitch = () => {
-        if (pendingMode) {
-            setMode(pendingMode);
-            setPendingMode(null);
-        }
-    };
-
+export function AppHeader({ view, filename, onToggleSidebar }: AppHeaderProps) {
     return (
         <header className="h-16 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6">
             
@@ -68,11 +39,10 @@ export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: Ap
                 </nav>
             </div>
 
-            {/* Right: Environment Switcher */}
-            <div className="flex items-center gap-3">
+            {/* Right: Environment Switcher (Removed) */}
+            {/* The entire div for environment switcher is removed */}
+            {/* <div className="flex items-center gap-3">
                 
-                {/* Connection Status */}
-                {/* Connection Status */}
                 <HealthIndicator />
                 <div className="flex items-center bg-card/50 border border-border rounded-full p-1 pl-3 pr-1 backdrop-blur-sm">
                     <span className="text-xs font-medium mr-3 text-muted-foreground uppercase tracking-wider">
@@ -80,7 +50,6 @@ export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: Ap
                     </span>
                     
                     <div className="flex bg-muted/50 rounded-full p-0.5 relative">
-                        {/* Selected Indicator */}
                          <div className={cn(
                             "absolute inset-y-1 w-[calc(50%-4px)] rounded-md transition-all duration-300 shadow-sm",
                              mode === 'dev' ? "left-1 bg-env-dev text-white" : "left-[calc(50%+2px)] bg-env-live text-white"
@@ -110,9 +79,10 @@ export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: Ap
                         </Button>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
-            <AlertDialog open={!!pendingMode} onOpenChange={(open) => !open && setPendingMode(null)}>
+            {/* AlertDialog for mode switch (Removed) */}
+            {/* <AlertDialog open={!!pendingMode} onOpenChange={(open) => !open && setPendingMode(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Switch Environment?</AlertDialogTitle>
@@ -141,7 +111,7 @@ export function AppHeader({ mode, setMode, view, filename, onToggleSidebar }: Ap
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
-            </AlertDialog>
+            </AlertDialog> */}
         </header>
     );
 }

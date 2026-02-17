@@ -1,14 +1,12 @@
 import { Unit } from "@/domain/schemas";
 import { getSchoolTheme } from "./schoolColors";
 import { Shield, Sword, Move, Zap } from "lucide-react";
-import { AppMode } from "@/types";
 
 interface PreviewCardProps {
   data: Unit;
-  mode: AppMode;
 }
 
-export function PreviewCard({ data, mode }: PreviewCardProps) {
+export function PreviewCard({ data }: PreviewCardProps) {
   const theme = getSchoolTheme(data.magic_school);
   
   // Safe defaults
@@ -41,7 +39,7 @@ export function PreviewCard({ data, mode }: PreviewCardProps) {
             <div className="w-24 h-24 bg-black/30 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/5 ring-1 ring-white/10 shadow-inner overflow-hidden relative">
                  {data.icon ? (
                      <img 
-                        src={`/api/assets/${mode}/${data.icon}`} 
+                        src={`/api/assets/${data.icon}`} 
                         alt={name}
                         className="w-full h-full object-cover"
                         onError={(e) => {

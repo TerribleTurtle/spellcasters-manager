@@ -1,3 +1,0 @@
-{"timestamp":"2026-02-17T00:05:03.689Z","action":"QUEUE_ADD","user":"Operator","details":{"change":{"target_id":"u1","name":"Unit","field":"name","new":"Updated","timestamp":"2026-02-17T00:05:03.688Z"}}}
-{"timestamp":"2026-02-17T00:05:03.714Z","action":"PATCH_COMMIT","user":"Operator","details":{"version":"1.1.0","title":"Integration Test Patch","changeCount":1}}
-{"timestamp":"2026-02-17T00:05:27.659Z","action":"QUEUE_ADD","user":"Operator","details":{"change":{"target_id":"u1","name":"Unit","field":"name","new":"Updated","timestamp":"2026-02-17T00:05:27.658Z"}}}

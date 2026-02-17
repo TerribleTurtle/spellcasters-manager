@@ -1,15 +1,13 @@
 import { ReactNode, useState } from 'react';
 import { AppHeader } from './AppHeader';
-import { AppMode, AppView } from '@/types';
+import { AppView } from '@/types';
 import { cn } from "@/lib/utils";
 import { DesktopAppLayout } from './DesktopAppLayout';
 import { MobileAppLayout } from './MobileAppLayout';
-import { EntityListHash } from '../grimoire/EntityList';
+import { EntityListHash } from "@/types";
 
 interface AppLayoutProps {
   children: ReactNode;
-  mode: AppMode;
-  setMode: (mode: AppMode) => void;
   view: AppView;
   setView: (view: AppView) => void;
   items: EntityListHash[];
@@ -19,12 +17,11 @@ interface AppLayoutProps {
   onSelectCategory: (category: string) => void;
   pendingChanges: number;
   queuedIds: Set<string>;
+  onRefresh: () => void;
 }
 
 export function AppLayout({
   children,
-  mode,
-  setMode,
   view,
   setView,
   items,
@@ -33,27 +30,24 @@ export function AppLayout({
   currentCategory,
   onSelectCategory,
   pendingChanges,
-  queuedIds
+  queuedIds,
+  onRefresh
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className={cn(
-        "h-screen w-full max-w-[1400px] mx-auto border-x border-border/50 shadow-2xl bg-background text-foreground flex overflow-hidden font-sans selection:bg-primary/30 selection:text-primary-foreground",
-        mode === 'live' && "theme-live"
+        "h-screen w-full max-w-[1400px] mx-auto border-x border-border/50 shadow-2xl bg-background text-foreground flex overflow-hidden font-sans selection:bg-primary/30 selection:text-primary-foreground"
     )}>
         
         {/* Background Texture */}
         <div className="fixed inset-0 z-0 pointer-events-none">
              <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] mix-blend-overlay"></div>
              <div className="absolute inset-0 bg-linear-to-br from-background via-background/95 to-accent/10"></div>
-                {/* Environment Indicator Line */}
-                <div className={`h-1 w-full shrink-0 ${mode === 'live' ? 'bg-env-live' : 'bg-env-dev'}`} />
-             {/* Dynamic Glow based on mode */}
-             <div className={cn(
-                 "absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] opacity-10 transition-colors duration-1000",
-                 mode === 'live' ? "bg-env-live" : "bg-env-dev"
-             )} />
+                {/* Environment Indicator Line - Default to dev style */}
+                <div className="h-1 w-full shrink-0 bg-env-dev" />
+             {/* Dynamic Glow */}
+             <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] opacity-10 transition-colors duration-1000 bg-env-dev" />
         </div>
 
         {/* Sidebar - Desktop */}
@@ -67,6 +61,7 @@ export function AppLayout({
             onSelectCategory={onSelectCategory}
             pendingChanges={pendingChanges}
             queuedIds={queuedIds}
+            onRefresh={onRefresh}
         />
 
         {/* Sidebar - Mobile (Drawer) */}
@@ -82,14 +77,13 @@ export function AppLayout({
             onSelectCategory={onSelectCategory}
             pendingChanges={pendingChanges}
             queuedIds={queuedIds}
+            onRefresh={onRefresh}
         />
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col relative z-10 h-full overflow-hidden">
              
              <AppHeader 
-                mode={mode} 
-                setMode={setMode} 
                 view={view} 
                 filename={selectedUnit}
                 onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}

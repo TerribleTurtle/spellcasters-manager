@@ -4,8 +4,8 @@ import { stripInternalFields } from "@/domain/utils";
 import { ArrowRight, Plus, Minus, Edit2 } from "lucide-react";
 
 interface JsonDiffProps {
-  oldData: any;
-  newData: any;
+  oldData: unknown;
+  newData: unknown;
   className?: string;
 }
 
@@ -73,8 +73,7 @@ const SYSTEM_FIELDS = [
 
 type ChangeCategory = 'USER' | 'SCHEMA' | 'SYSTEM';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getChangeCategory(change: Diff<any, any>): ChangeCategory {
+function getChangeCategory(change: Diff<unknown, unknown>): ChangeCategory {
     const key = change.path ? change.path[change.path.length - 1] : '';
     
     // 1. System Fields
@@ -94,8 +93,7 @@ function getChangeCategory(change: Diff<any, any>): ChangeCategory {
     return 'USER';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function ChangeValue({ change }: { change: Diff<any, any> }) {
+function ChangeValue({ change }: { change: Diff<unknown, unknown> }) {
     const category = getChangeCategory(change);
     const isDimmed = category !== 'USER';
 

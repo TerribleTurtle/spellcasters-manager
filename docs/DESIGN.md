@@ -20,7 +20,7 @@ If a feature doesn't serve one of these three jobs, it doesn't belong.
 ## 2. UX Principles
 
 1. **Speed Over Polish** — The UI gets out of the way. No animations that delay a click.
-2. **Safety Through Visibility** — You need to see what changed, what's queued, and what you're about to commit. DEV/LIVE is the only hard gate.
+2. **Safety Through Visibility** — You need to see what changed, what's queued, and what you're about to commit. The `.env` path is the only thing that determines what data you touch.
 3. **One Screen, One Job** — The Library finds entities. The Editor edits. The Patch Manager reviews and commits.
 4. **Trust the Operator** — Schema validation catches real errors. No hand-holding.
 5. **Maintainability = Less Code** — Every component you don't write is one you don't debug at 2am.
@@ -76,12 +76,15 @@ All entities validated by Zod schemas in `src/domain/schemas.ts`:
 - **ChangeSchema**: Tracks `target_id`, `field`, `old`, `new`, plus optional `tags`.
 - **PatchSchema**: Versioned bundle of Changes with `title`, `type`, `date`, `tags`.
 
-## 6. Environments
+## 6. Data Directory
 
-| Mode              | Data Source                           | Safety                            |
-| ----------------- | ------------------------------------- | --------------------------------- |
-| **DEV** (default) | `./mock_data/`                        | Safe sandbox                      |
-| **LIVE**          | `../spellcasters-community-api/data/` | Real game data, red theme warning |
+The server reads/writes a single directory defined by `DATA_DIR` in `.env`.
+Change the path, restart, done. No modes.
+
+| Path                                  | Typical Use                         |
+| ------------------------------------- | ----------------------------------- |
+| `../spellcasters-community-api/data/` | Your fork's real data               |
+| `./mock_data/`                        | Safe sandbox for testing / dev work |
 
 ## 7. Security
 

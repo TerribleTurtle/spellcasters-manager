@@ -14,10 +14,12 @@ describe('PatchController', () => {
     let mockRes: Partial<Response>;
     let jsonSpy: any;
     let statusSpy: any;
+    let nextSpy: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
         jsonSpy = vi.fn();
+        nextSpy = vi.fn();
         statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
         mockRes = {
             json: jsonSpy,
@@ -36,7 +38,7 @@ describe('PatchController', () => {
         // Service returns the patch object directly
         mockedPatchService.commitPatch.mockResolvedValue(mockPatch as any);
 
-        await PatchController.commitPatch(mockReq, mockRes as Response);
+        await PatchController.commitPatch(mockReq, mockRes as Response, nextSpy);
 
         expect(patchService.commitPatch).toHaveBeenCalled();
         // Controller returns { success: true, patch: ... }
@@ -47,19 +49,18 @@ describe('PatchController', () => {
         mockReq.body = { title: 'T', version: '1.0', type: 'balance', tags: [] };
         mockedPatchService.commitPatch.mockRejectedValue(new Error("No queued changes to commit"));
 
-        await PatchController.commitPatch(mockReq, mockRes as Response);
-        expect(statusSpy).toHaveBeenCalledWith(400);
-        expect(jsonSpy).toHaveBeenCalledWith({ error: "No queued changes to commit" });
+        await PatchController.commitPatch(mockReq, mockRes as Response, nextSpy);
+        expect(nextSpy).toHaveBeenCalledWith(expect.objectContaining({ message: "No queued changes to commit" }));
+        expect(statusSpy).not.toHaveBeenCalled();
     });
 
     it('commitPatch returns 500 if backup fails', async () => {
         mockReq.body = { title: 'T', version: '1.0', type: 'balance', tags: [] };
         const { backupService } = await import('../../server/services/backupService');
-        vi.mocked(backupService.createBackup).mockImplementation(() => { throw new Error('disk full'); });
+        vi.mocked(backupService.createBackup).mockRejectedValue(new Error('disk full'));
 
-        await PatchController.commitPatch(mockReq, mockRes as Response);
-        expect(statusSpy).toHaveBeenCalledWith(500);
-        expect(jsonSpy).toHaveBeenCalledWith({ error: 'Backup failed. Commit aborted.' });
+        await PatchController.commitPatch(mockReq, mockRes as Response, nextSpy);
+        expect(nextSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'Backup failed. Commit aborted.' }));
     });
 
     it('rollbackPatch delegates to patchService', async () => {
@@ -67,7 +68,7 @@ describe('PatchController', () => {
         mockReq.params = { id: 'p1' };
         mockedPatchService.rollbackPatch.mockResolvedValue(mockPatch as any);
 
-        await PatchController.rollbackPatch(mockReq, mockRes as Response);
+        await PatchController.rollbackPatch(mockReq, mockRes as Response, nextSpy);
 
         expect(patchService.rollbackPatch).toHaveBeenCalledWith('root/data', 'p1');
         // Controller returns { success: true, patch: ... }
@@ -79,7 +80,7 @@ describe('PatchController', () => {
         mockReq.query = { tag: 'buff', limit: '10' };
         mockedPatchService.getPatchHistory.mockResolvedValue(mockPatches as any);
 
-        await PatchController.getPatchHistory(mockReq, mockRes as Response);
+        await PatchController.getPatchHistory(mockReq, mockRes as Response, nextSpy);
 
         expect(patchService.getPatchHistory).toHaveBeenCalledWith('root/data', 'buff', undefined, undefined);
         expect(jsonSpy).toHaveBeenCalledWith(mockPatches);

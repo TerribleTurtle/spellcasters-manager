@@ -1,14 +1,21 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/toast-context"
 import { cn } from "@/lib/utils"
 
 
-import { Book, Hammer, Sword, Scroll, Globe, PawPrint, Castle, FlaskConical, Plus, Download, Upload } from "lucide-react"
-import { EntityList, EntityListHash } from "../grimoire/EntityList"
+import { Book, Hammer, Sword, Scroll, Globe, PawPrint, Castle, FlaskConical, Plus, Download, Upload, FolderSync, ArrowLeftRight, Trash2, Loader2 } from "lucide-react"
+import { EntityList } from "../grimoire/EntityList"
+import { EntityListHash } from "@/types";
 import { AppView } from "@/types";
-import { ResetDataDialog } from "../dialogs/ResetDataDialog";
 import { httpClient } from "@/lib/httpClient";
+
+interface DevConfig {
+    dataDir: string;
+    label: 'live' | 'mock';
+    livePath: string;
+    mockPath: string;
+}
 
 interface AppSidebarProps {
     view: AppView;
@@ -22,6 +29,7 @@ interface AppSidebarProps {
     pendingChanges: number;
     queuedIds: Set<string>;
     onCreate?: () => void;
+    onRefresh: () => void;
 }
 
 export function AppSidebar({ 
@@ -33,10 +41,92 @@ export function AppSidebar({
     onSelectCategory,
     pendingChanges,
     queuedIds,
-    onCreate
+    onCreate,
+    onRefresh
 }: AppSidebarProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { success, error } = useToast();
+
+    // ── Dev Config State ──
+    const [devConfig, setDevConfig] = useState<DevConfig | null>(null);
+    const [devLoading, setDevLoading] = useState<string | null>(null); // null | 'switch' | 'sync' | 'wipe'
+
+    const fetchDevConfig = useCallback(async () => {
+        try {
+            const cfg = await httpClient.request<DevConfig>('/api/dev/config');
+            setDevConfig(cfg);
+        } catch {
+            // Server might be restarting, ignore
+        }
+    }, []);
+
+    useEffect(() => { 
+        // Defer fetch to avoid synchronous setState warning
+        const t = setTimeout(() => void fetchDevConfig(), 0);
+        return () => clearTimeout(t);
+    }, [fetchDevConfig]);
+
+    const pollUntilReady = useCallback(async () => {
+        const maxAttempts = 30;
+        for (let i = 0; i < maxAttempts; i++) {
+            await new Promise(r => setTimeout(r, 1500));
+            try {
+                await httpClient.request('/api/health');
+                return true;
+            } catch {
+                // still down
+            }
+        }
+        return false;
+    }, []);
+
+    const handleSwitchPath = async () => {
+        if (!devConfig) return;
+        const target = devConfig.label === 'live' ? 'mock' : 'live';
+        setDevLoading('switch');
+        try {
+            await httpClient.request('/api/dev/switch-path', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target })
+            });
+            success(`Switching to ${target}… restarting server`);
+            // Server will restart — poll until it's back
+            await pollUntilReady();
+            window.location.reload();
+        } catch (err) {
+            error('Switch failed: ' + (err as Error).message);
+            setDevLoading(null);
+        }
+    };
+
+    const handleSync = async () => {
+        setDevLoading('sync');
+        try {
+            await httpClient.request('/api/dev/sync', { method: 'POST' });
+            success('Sync complete! Reloading…');
+            onRefresh();
+            setDevLoading(null);
+            await fetchDevConfig();
+        } catch (err) {
+            error('Sync failed: ' + (err as Error).message);
+            setDevLoading(null);
+        }
+    };
+
+    const handleWipeAndCopy = async () => {
+        setDevLoading('wipe');
+        try {
+            await httpClient.request('/api/dev/sync?clean=true', { method: 'POST' });
+            success('Wipe & Copy complete! Reloading…');
+            onRefresh();
+            setDevLoading(null);
+            await fetchDevConfig();
+        } catch (err) {
+            error('Wipe & Copy failed: ' + (err as Error).message);
+            setDevLoading(null);
+        }
+    };
 
     const handleExport = async () => {
         try {
@@ -253,7 +343,58 @@ export function AppSidebar({
                             onChange={handleImport} 
                         />
                    </div>
-                   <ResetDataDialog />
+                </div>
+
+                {/* Data Source */}
+                <div className="space-y-2 pt-2 border-t border-border/10">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">Data Source</h3>
+                        {devConfig && (
+                            <span className={cn(
+                                "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full tracking-wide",
+                                devConfig.label === 'live'
+                                    ? "bg-emerald-500/20 text-emerald-400"
+                                    : "bg-amber-500/20 text-amber-400"
+                            )}>
+                                {devConfig.label === 'live' ? '● Live' : '● Mock'}
+                            </span>
+                        )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-[10px] h-7 bg-background/50 hover:bg-background border-primary/20 hover:border-primary/50"
+                            onClick={handleSwitchPath}
+                            disabled={!!devLoading || !devConfig}
+                            title={devConfig ? `Switch to ${devConfig.label === 'live' ? 'Mock' : 'Live'}` : 'Loading…'}
+                        >
+                            {devLoading === 'switch' ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowLeftRight className="w-3 h-3 mr-1" />}
+                            {devLoading !== 'switch' && 'Switch'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-[10px] h-7 bg-background/50 hover:bg-background border-primary/20 hover:border-primary/50"
+                            onClick={handleSync}
+                            disabled={!!devLoading}
+                            title="Sync live → mock (preserves queue)"
+                        >
+                            {devLoading === 'sync' ? <Loader2 className="w-3 h-3 animate-spin" /> : <FolderSync className="w-3 h-3 mr-1" />}
+                            {devLoading !== 'sync' && 'Sync'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-[10px] h-7 bg-background/50 hover:bg-background border-destructive/20 hover:border-destructive/50 hover:text-destructive"
+                            onClick={handleWipeAndCopy}
+                            disabled={!!devLoading}
+                            title="Wipe mock_data & fresh copy from live (clears queue)"
+                        >
+                            {devLoading === 'wipe' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
+                            {devLoading !== 'wipe' && 'Wipe'}
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity cursor-default pt-2 border-t border-border/10">

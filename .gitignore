@@ -123,3 +123,12 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# Build Artifacts
+build_output.txt
+lint_report.txt
+
+# Runtime Data
+root/backups/
+root/data/
+*.jsonl

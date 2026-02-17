@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { patchService } from "@/services/PatchService";
-import { AppMode } from "@/types";
 import { History, RotateCcw, ChevronDown, ChevronUp, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PATCH_FIELDS } from "@/domain/constants";
 
 
 interface HistoryEntry {
@@ -15,16 +15,17 @@ interface HistoryEntry {
   patch_tags?: string[];
   patch_version?: string;
   patch_date?: string;
+
   patch_title?: string;
+  patch_diff?: string;
 }
 
 interface EntityHistoryPanelProps {
   entityId: string;
-  mode: AppMode;
   onRetcon?: (field: string, oldValue: unknown) => void;
 }
 
-export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPanelProps) {
+export function EntityHistoryPanel({ entityId, onRetcon }: EntityHistoryPanelProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -35,21 +36,22 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
     setLoading(true);
     setError(false);
     patchService
-      .getHistory(mode, { entity: entityId, flat: true })
+      .getHistory({ entity: entityId, flat: true })
       .then((data: unknown) => {
         if (!Array.isArray(data)) return;
         // Flatten: the flat endpoint returns change-level entries with patch metadata
-        const entries: HistoryEntry[] = data.map((item: any) => ({
-          target_id: item.target_id,
-          name: item.name,
-          field: item.field,
+        const entries: HistoryEntry[] = (data as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
+          target_id: String(item.target_id ?? ''),
+          name: String(item.name ?? ''),
+          field: String(item.field ?? ''),
           old: item.old,
           new: item.new,
-          tags: item.tags,
-          patch_tags: item.patch_tags,
-          patch_version: item.patch_version || item.version,
-          patch_date: item.patch_date || item.date,
-          patch_title: item.patch_title || item.title,
+          tags: Array.isArray(item.tags) ? item.tags as string[] : undefined,
+          patch_tags: Array.isArray(item.patch_tags) ? item.patch_tags as string[] : undefined,
+          patch_version: String(item.patch_version || item.version || ''),
+          patch_date: String(item.patch_date || item.date || ''),
+          patch_title: String(item.patch_title || item.title || ''),
+          patch_diff: item.patch_diff ? String(item.patch_diff) : undefined,
         }));
         setHistory(entries);
       })
@@ -58,7 +60,7 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
           setError(true);
       })
       .finally(() => setLoading(false));
-  }, [entityId, mode]);
+  }, [entityId]);
 
   if (loading) {
     return (
@@ -131,7 +133,7 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
                 {/* Field + Date */}
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-medium text-foreground/90">
-                    {entry.field === "quick-edit" ? "Full Edit" : entry.field}
+                    {entry.field === PATCH_FIELDS.QUICK_EDIT ? "Full Edit" : entry.field}
                   </span>
                   {entry.patch_version && (
                     <span className="text-micro px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-mono">
@@ -145,8 +147,22 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
                   )}
                 </div>
 
+                {/* Diff Toggle */}
+                {entry.patch_diff && (
+                    <details className="group/diff">
+                        <summary className="text-xs text-muted-foreground hover:text-primary cursor-pointer list-none flex items-center gap-1 mb-1">
+                            <span className="font-mono text-[10px] bg-muted px-1 rounded opacity-70 group-open/diff:bg-primary/10 group-open/diff:text-primary">GIT</span>
+                            <span className="group-open/diff:hidden">Show Diff</span>
+                            <span className="hidden group-open/diff:inline">Hide Diff</span>
+                        </summary>
+                        <pre className="text-[10px] font-mono bg-black/80 text-green-400 p-2 rounded overflow-x-auto whitespace-pre-wrap mt-2 mb-2">
+                           {entry.patch_diff}
+                        </pre>
+                    </details>
+                )}
+
                 {/* Old → New (only for non-object fields) */}
-                {entry.field !== "quick-edit" && (
+                {entry.field !== PATCH_FIELDS.QUICK_EDIT && (
                   <div className="flex items-center gap-1.5 text-mini font-mono">
                     <span className="text-red-400/80 line-through truncate max-w-[120px]">
                       {formatValue(entry.old)}
@@ -183,7 +199,7 @@ export function EntityHistoryPanel({ entityId, mode, onRetcon }: EntityHistoryPa
               </div>
 
               {/* Retcon Button */}
-              {onRetcon && entry.field !== "quick-edit" && (
+              {onRetcon && entry.field !== PATCH_FIELDS.QUICK_EDIT && (
                 <Button
                   type="button"
                   variant="ghost"

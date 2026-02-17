@@ -1,9 +1,7 @@
-
 import { useCallback, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ImagePlus, RefreshCw, UploadCloud } from "lucide-react";
 
-import { AppMode } from "@/types";
 import { assetService } from "@/services/AssetService";
 import { useToast } from "@/components/ui/toast-context";
 import { AssetPicker } from './dialogs/AssetPicker';
@@ -12,12 +10,11 @@ import { cn } from "@/lib/utils";
 interface VisualAssetHelpersProps {
   unitName: string;
   currentIcon?: string;
-  mode: AppMode;
   onUpload: (filename: string) => void;
   compact?: boolean;
 }
 
-export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode, compact }: VisualAssetHelpersProps) {
+export function VisualAssetHelpers({ currentIcon, onUpload, unitName, compact }: VisualAssetHelpersProps) {
   const { success, error } = useToast();
   const [pickerOpen, setPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +26,7 @@ export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode, comp
     const ext = file.name.split('.').pop();
     const targetName = `${unitName.toLowerCase().replace(/\s+/g, '_')}.${ext}`;
 
-    assetService.upload(file, targetName, mode)
+    assetService.upload(file, targetName)
     .then(data => {
       if (data.success) {
         onUpload(data.filename);
@@ -43,7 +40,7 @@ export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode, comp
 
     // Reset so re-selecting the same file triggers onChange
     e.target.value = '';
-  }, [unitName, onUpload, mode, success, error]);
+  }, [unitName, onUpload, success, error]);
 
   return (
     <div className={cn("space-y-4", compact && "space-y-0 h-full")}>
@@ -88,7 +85,7 @@ export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode, comp
             <div className="w-full h-full flex items-center justify-center bg-background">
                  {currentIcon ? (
                      <img 
-                        src={`/api/assets/${mode}/${currentIcon}`} 
+                        src={`/api/assets/${currentIcon}`} 
                         alt="Icon" 
                         className="w-full h-full object-cover" 
                      />
@@ -108,7 +105,7 @@ export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode, comp
                  <div className="shrink-0 w-24 h-24 bg-background rounded-lg border shadow-sm overflow-hidden flex items-center justify-center">
                      {currentIcon ? (
                          <img 
-                            src={`/api/assets/${mode}/${currentIcon}`} 
+                            src={`/api/assets/${currentIcon}`} 
                             alt="Icon" 
                             className="w-full h-full object-cover" 
                          />
@@ -149,7 +146,6 @@ export function VisualAssetHelpers({ currentIcon, onUpload, unitName, mode, comp
       <AssetPicker 
          open={pickerOpen} 
          onOpenChange={setPickerOpen}
-         mode={mode}
          onSelect={(filename) => onUpload(filename)}
       />
 

@@ -1,10 +1,9 @@
-import { AppMode } from '../../src/domain/schemas.js';
+export {};
 
 declare global {
   namespace Express {
     interface Request {
       context: {
-        mode: AppMode;
         dataDir: string;
       };
     }

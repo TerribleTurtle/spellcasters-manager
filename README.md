@@ -16,15 +16,14 @@ The **sidebar** is the entry point. Use the category filters (Spellcasters, Crea
 
 Click any entity to open it in the **Studio**. A validated form editor with schema-driven fields. Edit stats, descriptions, assets, and metadata.
 
-When saving, you have three options:
+When saving, you have two options:
 
-| Action         | Shortcut       | What it does                                                                                           |
-| -------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
-| **Save**       | `Ctrl+S`       | Writes the JSON file only. No patch entry. Best for quick tweaks or WIP.                               |
-| **Save + Tag** | `Ctrl+Shift+S` | Writes JSON + creates a tagged entry in `patches.json`. Use for significant changes you want to track. |
-| **Queue**      | —              | Writes JSON + stages the change in `queue.json` for batching into a larger patch later.                |
+| Action    | Shortcut | What it does                                                                                         |
+| --------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| **Save**  | `Ctrl+S` | Writes the JSON file to disk. An automatic audit entry is recorded in `patches.json` for every save. |
+| **Queue** | —        | Writes JSON + stages the change in `queue.json` for batching into a larger patch release.            |
 
-> **Note:** You can add a "Reason" note when saving with tags or queuing. This note appears in the patch history for context.
+> **Note:** You can add a "Reason" note when queuing. This note appears in the patch history for context.
 
 #### Live Preview
 
@@ -56,21 +55,24 @@ The **History** tab in the Patch Manager shows all published patches. Filter by 
 | --------------------- | ------------------ | -------------------------- |
 | Spellcasters (Heroes) | `HeroSchema`       | `heroes/`                  |
 | Creatures / Buildings | `UnitSchema`       | `units/`                   |
+| Titans                | `UnitSchema`       | `titans/`                  |
 | Spells / Consumables  | `ConsumableSchema` | `consumables/` / `spells/` |
 
 ## Safety & Reliability
 
-- **Backups**: Every patch commit triggers a full backup of `data/` to `data/backups/`.
-- **Reset Safety**: "Reset Dev Data" creates a snapshot backup in `root/backups/` before wiping, and resets git state.
-- **Live Lock**: The system refuses to write to live data paths unless strictly in Live Mode, preventing accidental resets.
+- **Atomic Writes**: All JSON writes use a temp-file + rename strategy to prevent data corruption on crash.
+- **Selective Saves**: Batch operations skip files whose content hasn't changed, reducing unnecessary I/O.
+- **Backups**: Every patch commit and every data import triggers a full backup of the data directory.
+- **Import Safety**: Imports can optionally route through the patch queue (`?queue=true`) for review before applying.
 - **Audit Logs**: Critical actions (save, queue, commit, rollback) are logged to `data/audit.jsonl`.
 - **Health Check**: The header displays system health and version.
 - **Validation**: Strict schema validation with instant UI feedback ensures data integrity.
 - **Unsaved Changes**: The app prevents accidental navigation away from unsaved work.
+- **Path Security**: All file operations are guarded against directory traversal attacks.
 
 ## Patch History API
 
-When publishing in **LIVE** mode, the Manager generates static JSON files in the API repo (`../spellcasters-community-api/`):
+When publishing, the Manager generates static JSON files for the community API (`../spellcasters-community-api/`):
 
 | File                    | Purpose                                       |
 | ----------------------- | --------------------------------------------- |
@@ -82,17 +84,8 @@ When publishing in **LIVE** mode, the Manager generates static JSON files in the
 ## Architecture
 
 - **Frontend (`src/`)**: React + Vite + TailwindCSS v4. Zod schemas as single source of truth.
-- **Backend (`server/`)**: Express + Node.js. Non-blocking Async I/O for file operations, git commits, asset uploads. Structured logging via Winston.
-- **Data**: JSON files on disk. No database.
-
-## Environments
-
-| Mode              | Data Directory                        | Indicator   |
-| ----------------- | ------------------------------------- | ----------- |
-| **DEV** (default) | `./mock_data/`                        | Blue badge  |
-| **LIVE**          | `../spellcasters-community-api/data/` | Green theme |
-
-Switching modes re-fetches all data. Changes in one mode do not affect the other.
+- **Backend (`server/`)**: Express + Node.js. Non-blocking Async I/O for file operations, git commits, asset uploads. Structured logging via Winston. Standardized error handling via `AppError`.
+- **Data**: JSON files on disk (`data/`). No database. Git for version tracking.
 
 ## Getting Started
 
@@ -108,6 +101,17 @@ git clone <your-repo-url>
 cd spellcasters-manager
 npm install
 ```
+
+### Configuration
+
+Create a `.env` file in the project root:
+
+```env
+DATA_DIR=./data     # Path to the JSON data directory
+PORT=3001           # Backend server port (default: 3001)
+```
+
+> **Tip:** To switch data sources, change `DATA_DIR` and restart. No code changes needed.
 
 ### Running
 
@@ -132,7 +136,7 @@ npm run test:coverage  # Generate coverage report
 
 The test suite covers:
 
-- **Server Unit Tests**: Controllers, Services (Git, File, Patch), Utils.
+- **Server Unit Tests**: Controllers, Services (Git, File, Patch, Queue), Utils.
 - **Integration Tests**: Data flow, Backup/Audit, Batch operations.
 - **Client Service Tests**: HttpClient, PatchService (API layer).
 

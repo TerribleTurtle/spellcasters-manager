@@ -1,96 +1,77 @@
-import { Request, Response } from 'express';
-import { patchService } from '../services/patchService.js';
-import { logger } from '../utils/logger.js';
+import { Request, Response, NextFunction } from 'express';
+import { queueService } from '../services/queueService.js';
+import { AppError } from '../utils/AppError.js';
 
-export const getQueue = async (req: Request, res: Response) => {
+export const getQueue = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { dataDir } = req.context;
-        const queue = await patchService.getQueue(dataDir);
+        const queue = await queueService.getQueue(dataDir);
         res.json(queue);
     } catch (error: unknown) {
-        logger.error("getQueue Error:", { error });
-        res.status(500).json({ error: (error as Error).message });
+        next(error);
     }
 };
 
-export const addToQueue = async (req: Request, res: Response) => {
+export const addToQueue = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { change } = req.body;
         const { dataDir } = req.context;
         
         if (!change) {
-            res.status(400).json({ error: "Change object required" });
-            return;
+            return next(AppError.badRequest("Change object required"));
         }
 
-        const queue = await patchService.addToQueue(dataDir, change);
+        const queue = await queueService.addToQueue(dataDir, change);
         res.json({ success: true, queueLength: queue.length });
     } catch (error: unknown) {
-        logger.error("addToQueue Error:", { error });
-        res.status(500).json({ error: (error as Error).message });
+        next(error);
     }
 };
 
-export const updateQueueItem = async (req: Request, res: Response) => {
+export const updateQueueItem = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { index, change } = req.body;
         const { dataDir } = req.context;
 
         if (index === undefined || !change) {
-            res.status(400).json({ error: "Index and change object required" });
-            return;
+            return next(AppError.badRequest("Index and change object required"));
         }
 
-        await patchService.updateQueueItem(dataDir, index, change);
+        await queueService.updateQueueItem(dataDir, index, change);
         res.json({ success: true });
     } catch (error: unknown) {
-        const msg = (error as Error).message;
-        if (msg === "Queue item not found") {
-            res.status(404).json({ error: msg });
-        } else {
-            logger.error("updateQueueItem Error:", { error });
-            res.status(500).json({ error: msg });
-        }
+        next(error);
     }
 };
 
-export const removeFromQueue = async (req: Request, res: Response) => {
+export const removeFromQueue = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { index } = req.body;
         const { dataDir } = req.context;
 
         if (index === undefined) {
-            res.status(400).json({ error: "Index required" });
-            return;
+             return next(AppError.badRequest("Index required"));
         }
 
-        const queue = await patchService.removeFromQueue(dataDir, index);
+        const queue = await queueService.removeFromQueue(dataDir, index);
         res.json({ success: true, queueLength: queue.length });
     } catch (error: unknown) {
-        const msg = (error as Error).message;
-        if (msg === "Queue item not found") {
-            res.status(404).json({ error: msg });
-        } else {
-            logger.error("removeFromQueue Error:", { error });
-            res.status(500).json({ error: msg });
-        }
+        next(error);
     }
 };
 
-export const bulkRemoveFromQueue = async (req: Request, res: Response) => {
+export const bulkRemoveFromQueue = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { indices } = req.body;
         const { dataDir } = req.context;
 
         if (!Array.isArray(indices) || indices.length === 0) {
-            res.status(400).json({ error: "Non-empty indices array required" });
-            return;
+            return next(AppError.badRequest("Non-empty indices array required"));
         }
 
-        const queue = await patchService.bulkRemoveFromQueue(dataDir, indices);
+        const queue = await queueService.bulkRemoveFromQueue(dataDir, indices);
         res.json({ success: true, queueLength: queue.length });
     } catch (error: unknown) {
-        logger.error("bulkRemoveFromQueue Error:", { error });
-        res.status(500).json({ error: (error as Error).message });
+        next(error);
     }
 };

@@ -1,12 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
+import { logger } from './logger.js';
+
 export class AuditLogger {
     /**
      * Appends a structured log entry to audit.jsonl in the data directory.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    logAction(dataDir: string, action: string, details: Record<string, any>, user: string = "Operator") {
+    async logAction(dataDir: string, action: string, details: Record<string, any>, user: string = "Operator") {
         const logFile = path.join(dataDir, 'audit.jsonl');
         
         const entry = {
@@ -16,13 +18,10 @@ export class AuditLogger {
             details
         };
 
-        try {
-            fs.appendFileSync(logFile, JSON.stringify(entry) + '\n');
-        } catch (error) {
-            console.error("Failed to write to audit log:", error);
-            // Don't throw, we don't want to break the app flow for logging failure?
-            // "Admin Safety" might argue we should, but for now silent fail + console error is safer for UX.
-        }
+        // Non-blocking write, but return promise so we can wait if needed
+        return fs.promises.appendFile(logFile, JSON.stringify(entry) + '\n').catch(err => {
+            logger.error("Failed to write to audit log", { error: err });
+        });
     }
 }
 

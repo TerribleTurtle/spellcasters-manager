@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export interface TabItem {
     value: string;
-    label: string;
+    label: React.ReactNode;
     count?: number;
 }
 

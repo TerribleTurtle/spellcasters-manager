@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { AppMode } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -16,11 +15,10 @@ interface AssetPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (filename: string) => void;
-  mode: AppMode;
 }
 
-export function AssetPicker({ open, onOpenChange, onSelect, mode }: AssetPickerProps) {
-  const { assets, isLoading, refresh } = useAssets(mode);
+export function AssetPicker({ open, onOpenChange, onSelect }: AssetPickerProps) {
+  const { assets, isLoading, refresh } = useAssets();
   const [search, setSearch] = useState("");
   const { success, error } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +32,7 @@ export function AssetPicker({ open, onOpenChange, onSelect, mode }: AssetPickerP
     if (!file) return;
 
     try {
-      const { filename } = await assetService.upload(file, file.name, mode);
+      const { filename } = await assetService.upload(file, file.name);
       success(`Uploaded ${filename}`);
       refresh();
     } catch {
@@ -106,7 +104,7 @@ export function AssetPicker({ open, onOpenChange, onSelect, mode }: AssetPickerP
                     className="group relative aspect-square rounded-lg border bg-background overflow-hidden hover:ring-2 hover:ring-primary focus-ring transition-all"
                 >
                     <img
-                        src={`/api/assets/${mode}/${asset}`}
+                        src={`/api/assets/${asset}`}
                         alt={asset}
                         className="w-full h-full object-cover transition-transform group-hover:scale-110"
                         loading="lazy"

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AppMode, Patch, Change } from "@/types";
+import { Patch, Change } from "@/types";
 import { patchService } from "@/services/PatchService";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,17 +20,13 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
-interface HistoryGridProps {
-    mode: AppMode;
-}
-
 interface FlatChange extends Change {
     patch_version: string;
     patch_date: string;
     patch_title: string;
 }
 
-export function HistoryGrid({ mode }: HistoryGridProps) {
+export function HistoryGrid() {
     const [rollbackCandidate, setRollbackCandidate] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'patches' | 'changes'>('patches');
     const [searchTerm, setSearchTerm] = useState("");
@@ -51,14 +47,14 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
             if (endDate) filters.to = endDate;
             if (viewMode === 'changes') filters.flat = true;
 
-            const result = await patchService.getHistory(mode, filters);
+            const result = await patchService.getHistory(filters);
             setData(result);
         } catch {
             error("Failed to load history");
         } finally {
             setLoading(false);
         }
-    }, [mode, tagFilter, searchTerm, startDate, endDate, viewMode, error]);
+    }, [tagFilter, searchTerm, startDate, endDate, viewMode, error]);
 
     const handleRollback = (patchId: string) => {
         setRollbackCandidate(patchId);
@@ -73,7 +69,7 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
         setLoading(true);
         
         try {
-            const res = await patchService.rollback(mode, targetId);
+            const res = await patchService.rollback(targetId);
             if (res.success) {
                 await fetchData();
                 success("Rollback Successful! A revert patch has been created.");
@@ -275,6 +271,20 @@ export function HistoryGrid({ mode }: HistoryGridProps) {
                                             <div className="text-mini text-muted-foreground italic pl-3">+ {patch.changes.length - 3} more</div>
                                         )}
                                     </div>
+                                    
+                                     {/* Diff Preview */}
+                                     {patch.diff && (
+                                        <details className="mt-3 pt-2 border-t border-border/30 group/diff">
+                                            <summary className="text-xs text-muted-foreground hover:text-primary cursor-pointer list-none flex items-center gap-1">
+                                                <span className="font-mono text-[10px] bg-muted px-1 rounded opacity-70 group-open/diff:bg-primary/10 group-open/diff:text-primary">GIT</span>
+                                                <span className="group-open/diff:hidden">Show Full Diff</span>
+                                                <span className="hidden group-open/diff:inline">Hide Diff</span>
+                                            </summary>
+                                            <pre className="text-[10px] font-mono bg-black/80 text-green-400 p-2 rounded overflow-x-auto whitespace-pre-wrap mt-2">
+                                                {patch.diff}
+                                            </pre>
+                                        </details>
+                                    )}
                                 </div>
                             </div>
                         ))}

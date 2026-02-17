@@ -9,11 +9,13 @@ import * as PatchController from './controllers/patchController.js';
 import * as QueueController from './controllers/queueController.js';
 import * as HealthController from './controllers/healthController.js';
 import * as AssetController from './controllers/assetController.js';
+import * as DevController from './controllers/devController.js';
 import { fileService } from './services/fileService.js';
-import { UnitSchema, HeroSchema, ConsumableSchema } from '../src/domain/schemas.js';
+import { getSchemaForCategory, getRegisteredCategories } from '../src/config/entityRegistry.js';
 import { logger } from './utils/logger.js';
 import fs from 'fs'; // Needed for multer config
-import { z } from 'zod';
+
+import { AppError } from './utils/AppError.js';
 
 // Load .env
 dotenv.config();
@@ -26,10 +28,9 @@ const app = express();
 const PORT = 3001;
 
 // --- Config ---
-// Prefer Env Vars, fallback to relative paths
-const DEV_DATA_DIR = process.env.DEV_DATA_DIR || path.resolve(__dirname, '../../mock_data');
-const LIVE_DATA_DIR = process.env.LIVE_DATA_DIR || path.resolve(__dirname, '../../spellcasters-community-api/data');
-const ASSETS_DIR = path.join(DEV_DATA_DIR, 'assets'); // Default upload location
+// Single DATA_DIR — change the path in .env and restart. No modes.
+const DATA_DIR = process.env.DATA_DIR || path.resolve(__dirname, '../../spellcasters-community-api/data');
+const ASSETS_DIR = path.join(DATA_DIR, 'assets'); // Default upload location
 
 // --- Middleware ---
 app.use(cors());
@@ -47,9 +48,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Context Middleware (Dependency Injection-lite)
 app.use((req: Request, res: Response, next: NextFunction) => {
-    const mode = (req.query.mode === 'live' ? 'live' : 'dev');
-    const dataDir = mode === 'live' ? LIVE_DATA_DIR : DEV_DATA_DIR;
-    req.context = { mode, dataDir };
+    req.context = { dataDir: DATA_DIR };
     next();
 });
 
@@ -78,18 +77,17 @@ const upload = multer({
 
 // --- Routes ---
 
-
-
 // Data
-app.get('/api/bulk/:category', DataController.getCategoryData); // Bulk Load (new)
-app.post('/api/save/:category/batch', DataController.saveBatch); // Fix: Moved above :filename
-app.get('/api/list/:category', DataController.listFiles);
-app.get('/api/data/:category/:filename', DataController.getData);
-app.post('/api/save/:category/:filename', DataController.saveData);
-app.delete('/api/data/:category/:filename', DataController.deleteData);
+// Apply validatePath middleware to routes that use path params for file/dir access
+app.get('/api/bulk/:category', DataController.validatePath, DataController.getCategoryData); 
+app.post('/api/save/:category/batch', DataController.validatePath, DataController.saveBatch); 
+app.get('/api/list/:category', DataController.validatePath, DataController.listFiles);
+app.get('/api/data/:category/:filename', DataController.validatePath, DataController.getData);
+app.post('/api/save/:category/:filename', DataController.validatePath, DataController.saveData);
+app.delete('/api/data/:category/:filename', DataController.validatePath, DataController.deleteData);
+
 app.get('/api/data/export', DataController.exportData);
 app.post('/api/data/import', DataController.importData);
-app.post('/api/admin/reset', DataController.resetDevData);
 
 // Patches
 app.get('/api/patches/queue', QueueController.getQueue);
@@ -109,34 +107,31 @@ app.get('/api/assets/list', AssetController.listAssets);
 app.post('/api/assets/upload', upload.single('file'), AssetController.uploadAsset);
 
 // Static Assets
-// We serve both to allow switching. Context middleware doesn't affect static serve easily.
-app.use('/api/assets/dev', express.static(DEV_DATA_DIR + '/assets'));
-app.use('/api/assets/live', express.static(LIVE_DATA_DIR + '/assets'));
+app.use('/api/assets', express.static(DATA_DIR + '/assets'));
+
+// Dev Tools
+app.get('/api/dev/config', DevController.getConfig);
+app.post('/api/dev/switch-path', DevController.switchPath);
+app.post('/api/dev/sync', DevController.syncData);
 
 
 
 // --- Boot Validation ---
 const validateDataOnBoot = () => {
     logger.info('[Boot] Validating data integrity...');
-    const schemas: Record<string, z.ZodTypeAny> = {
-        heroes: HeroSchema,
-        units: UnitSchema,
-        spells: ConsumableSchema,
-        consumables: ConsumableSchema
-    };
-
+    
     let errorCount = 0;
-    const categories = Object.keys(schemas);
+    const categories = getRegisteredCategories();
 
     categories.forEach(category => {
-        const dirPath = path.join(DEV_DATA_DIR, category);
+        const dirPath = path.join(DATA_DIR, category);
         if (fileService.existsSync(dirPath)) {
             const files = fileService.listFilesSync(dirPath, ['.json']);
             files.forEach(file => {
                 try {
                     const filePath = path.join(dirPath, file);
                     const data = fileService.readJsonSync(filePath);
-                    const schema = schemas[category];
+                    const schema = getSchemaForCategory(category);
                     if (schema) {
                         const result = schema.safeParse(data);
                         if (!result.success) {
@@ -167,6 +162,17 @@ app.listen(PORT, () => {
 // Global Error Handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof AppError) {
+        logger.warn(`[${err.code}] ${req.method} ${req.url}: ${err.message}`);
+        res.status(err.statusCode).json({
+            error: err.message,
+            code: err.code,
+             
+            ...(err.details ? { details: err.details } : {})
+        });
+        return;
+    }
+
     logger.error(`[Error] ${req.method} ${req.url}:`, { error: err.message, stack: err.stack });
     res.status(500).json({ error: "Internal Server Error", details: err.message });
 });

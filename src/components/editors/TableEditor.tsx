@@ -1,9 +1,9 @@
-import { Control, useWatch, FieldValues, Path } from "react-hook-form";
-import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Control, useWatch, FieldValues, Path, useFormContext } from "react-hook-form";
+import { FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Undo2, Info } from "lucide-react";
+import { Undo2, Info, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -39,14 +39,8 @@ function getRowStatus(initialValue: unknown, currentValue: unknown): RowStatus {
   if (v1 === null && v2 === null) return "clean";
 
   // Schema-missing: the field isn't in the JSON at all (initial is undefined/null) AND user hasn't touched it (current is null)
-  // Actually, if it's not in JSON, it's "schema-missing" only if the user ADDS a value.
-  // Wait, original logic: if initial is missing, it's schema-missing.
-  // But if I add a value, is it modified or schema-missing?
-  // Let's stick to: "New Field" if it wasn't there.
   if (initialValue === undefined) {
       // If user has set a value, it's a "New Field" that is also being edited.
-      // If user hasn't set a value (v2 is null), it's just missing. Default to clean?
-      // No, let's keep it simple: matches original intent.
       return (v2 !== null) ? "schema-missing" : "clean";
   }
   
@@ -81,6 +75,7 @@ const STATUS_STYLES: Record<RowStatus, { input: string; badge: string; badgeText
 export function TableEditor<TFieldValues extends FieldValues>({ fields, control, initialData }: TableEditorProps<TFieldValues>) {
   // Watch all fields to detect changes against initialData
   const formValues = useWatch({ control });
+  const { formState: { errors } } = useFormContext<TFieldValues>();
   const [showAll, setShowAll] = useState(false);
 
   // Filter visible fields
@@ -108,7 +103,7 @@ export function TableEditor<TFieldValues extends FieldValues>({ fields, control,
   // Count statuses for legend
   const statusCounts = { modified: 0, "schema-missing": 0 };
   fields.forEach(field => {
-    const status = getRowStatus(initialData?.[field.name as keyof TFieldValues], (formValues as any)?.[field.name]);
+    const status = getRowStatus(initialData?.[field.name as keyof TFieldValues], (formValues as Record<string, unknown>)?.[field.name]);
     if (status !== "clean") statusCounts[status as keyof typeof statusCounts]++;
   });
 
@@ -118,7 +113,7 @@ export function TableEditor<TFieldValues extends FieldValues>({ fields, control,
       <div className="grid grid-cols-2 gap-x-6 gap-y-4">
         {visibleFields.map((field) => {
           const currentValue = initialData?.[field.name as keyof TFieldValues];
-          const newValue = (formValues as any)?.[field.name];
+          const newValue = (formValues as Record<string, unknown>)?.[field.name];
           const status = getRowStatus(currentValue, newValue);
           const styles = STATUS_STYLES[status];
 
@@ -135,6 +130,13 @@ export function TableEditor<TFieldValues extends FieldValues>({ fields, control,
                      <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                          {field.label}
                      </span>
+                     {field.type === 'number' && (field.min !== undefined || field.max !== undefined) && (
+                        <span className="text-[10px] text-muted-foreground font-mono opacity-70">
+                          {field.min !== undefined && field.max !== undefined && `(${field.min}–${field.max})`}
+                          {field.min !== undefined && field.max === undefined && `(≥ ${field.min})`}
+                          {field.max !== undefined && field.min === undefined && `(≤ ${field.max})`}
+                        </span>
+                     )}
                      {status !== "clean" && (
                         <span 
                           className={cn("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm font-bold", styles.badge)}
@@ -145,6 +147,11 @@ export function TableEditor<TFieldValues extends FieldValues>({ fields, control,
                       )}
                  </div>
                  {field.required && <span className="text-destructive text-xs" title="Required">*</span>}
+                 {errors[field.name as Path<TFieldValues>] && (
+                    <span className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-right-1">
+                        {String(errors[field.name as Path<TFieldValues>]?.message ?? "Invalid")}
+                    </span>
+                 )}
               </div>
               
               {/* Note / Description */}
@@ -172,25 +179,75 @@ export function TableEditor<TFieldValues extends FieldValues>({ fields, control,
                                 ))}
                               </SelectContent>
                             </Select>
-                          ) : (
-                            <Input 
-                              type={field.type} 
+                          ) : field.type === 'number' ? (
+                            <div className="flex items-center gap-0 w-full">
+                              <button
+                                type="button"
+                                tabIndex={-1}
+                                className="h-9 w-8 shrink-0 flex items-center justify-center rounded-l-md border border-r-0 border-input bg-secondary/50 text-muted-foreground hover:bg-primary/20 hover:text-primary active:bg-primary/30 transition-colors"
+                                onClick={() => {
+                                  const cur = Number(formField.value) || 0;
+                                  const step = field.step || 1;
+                                  const next = cur - step;
+                                  if (field.min !== undefined && next < field.min) return;
+                                  formField.onChange(next);
+                                }}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                            <Input
+                              type="number"
                               {...formField}
                               value={formField.value ?? ""}
                               min={field.min}
                               max={field.max}
                               step={field.step}
                               onChange={e => {
-                                const val = field.type === 'number' ? 
-                                  (e.target.value === '' ? '' : Number(e.target.value)) : 
-                                  e.target.value;
+                                const val = e.target.value === '' ? '' : Number(e.target.value);
                                 formField.onChange(val);
                               }}
+                              onBlur={(e) => {
+                                // Clamp value on blur
+                                let val = Number(e.target.value);
+                                if (field.min !== undefined && val < field.min) val = field.min;
+                                if (field.max !== undefined && val > field.max) val = field.max;
+                                if (val !== Number(e.target.value)) {
+                                  formField.onChange(val);
+                                }
+                                formField.onBlur();
+                              }}
+                              className={cn(
+                                "h-9 text-sm bg-background/50 font-mono text-center rounded-none border-x-0",
+                                "transition-all",
+                                status !== "clean" && styles.input
+                              )}
+                            />
+                              <button
+                                type="button"
+                                tabIndex={-1}
+                                className="h-9 w-8 shrink-0 flex items-center justify-center rounded-r-md border border-l-0 border-input bg-secondary/50 text-muted-foreground hover:bg-primary/20 hover:text-primary active:bg-primary/30 transition-colors"
+                                onClick={() => {
+                                  const cur = Number(formField.value) || 0;
+                                  const step = field.step || 1;
+                                  const next = cur + step;
+                                  if (field.max !== undefined && next > field.max) return;
+                                  formField.onChange(next);
+                                }}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <Input
+                              type={field.type}
+                              {...formField}
+                              value={formField.value ?? ""}
+                              onChange={e => formField.onChange(e.target.value)}
                               className={cn(
                                 "h-9 text-sm bg-background/50 font-mono",
-                                "transition-all", 
+                                "transition-all",
                                 status !== "clean" && styles.input
-                              )} 
+                              )}
                             />
                           )}
                         </FormControl>
@@ -212,7 +269,6 @@ export function TableEditor<TFieldValues extends FieldValues>({ fields, control,
                             <Undo2 className="w-3 h-3" />
                           </Button>
                       </div>
-                      <FormMessage className="mt-1 text-xs" />
                     </FormItem>
                   )}
                 />

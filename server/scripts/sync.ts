@@ -11,22 +11,24 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Config (Mirroring index.ts default, but checking for mock_data preference)
+// Config
+// TARGET_DIR = where we write the copy (defaults to DATA_DIR from .env, then mock_data)
+// SOURCE_DIR = where we read from (defaults to the live API repo)
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
-const DEV_DATA_DIR = process.env.DEV_DATA_DIR || path.resolve(PROJECT_ROOT, 'mock_data');
-const SOURCE_DIR = process.env.LIVE_DATA_DIR || path.resolve(PROJECT_ROOT, '../spellcasters-community-api/data');
+const TARGET_DIR = process.env.DATA_DIR || path.resolve(PROJECT_ROOT, 'mock_data');
+const SOURCE_DIR = process.env.SYNC_SOURCE || path.resolve(PROJECT_ROOT, '../spellcasters-community-api/data');
 const BACKUP_ROOT = path.resolve(PROJECT_ROOT, 'root/backups');
 const MAX_RESET_BACKUPS = 3;
 
 console.log(`[Sync] Copying data...`);
-console.log(`[Source] LIVE: ${SOURCE_DIR}`);
-console.log(`[Target] DEV:  ${DEV_DATA_DIR}`);
+console.log(`[Source] ${SOURCE_DIR}`);
+console.log(`[Target] ${TARGET_DIR}`);
 
-// ── SAFETY: Never write to LIVE_DATA_DIR ──
-const resolvedLive = path.resolve(SOURCE_DIR);
-const resolvedDev = path.resolve(DEV_DATA_DIR);
-if (resolvedDev === resolvedLive || resolvedDev.startsWith(resolvedLive + path.sep)) {
-    console.error(`[ABORT] DEV_DATA_DIR resolves inside LIVE_DATA_DIR. Refusing to modify live data.`);
+// ── SAFETY: Never write into the source directory ──
+const resolvedSource = path.resolve(SOURCE_DIR);
+const resolvedTarget = path.resolve(TARGET_DIR);
+if (resolvedTarget === resolvedSource || resolvedTarget.startsWith(resolvedSource + path.sep)) {
+    console.error(`[ABORT] DATA_DIR resolves inside SYNC_SOURCE. Refusing to overwrite source data.`);
     process.exit(1);
 }
 
@@ -36,7 +38,7 @@ if (!fs.existsSync(SOURCE_DIR)) {
 }
 
 // Preserve existing queue unless --clean flag is used
-const queueFile = path.join(DEV_DATA_DIR, 'queue.json');
+const queueFile = path.join(TARGET_DIR, 'queue.json');
 let queueData = '[]';
 const cleanQueue = process.argv.includes('--clean');
 
@@ -48,16 +50,16 @@ if (fs.existsSync(queueFile) && !cleanQueue) {
 }
 
 // ── BACKUP: Snapshot dev data before wiping ──
-if (fs.existsSync(DEV_DATA_DIR)) {
+if (fs.existsSync(TARGET_DIR)) {
     try {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupDir = path.join(BACKUP_ROOT, `dev_reset_${timestamp}`);
-        console.log(`[Sync] 📦 Backing up dev data to ${backupDir}...`);
-        copyRecursive(DEV_DATA_DIR, backupDir);
+        const backupDir = path.join(BACKUP_ROOT, `sync_backup_${timestamp}`);
+        console.log(`[Sync] 📦 Backing up target data to ${backupDir}...`);
+        copyRecursive(TARGET_DIR, backupDir);
 
         // Prune old reset backups (keep latest N)
         const allBackups = fs.readdirSync(BACKUP_ROOT)
-            .filter(d => d.startsWith('dev_reset_'))
+            .filter(d => d.startsWith('sync_backup_'))
             .sort();
         while (allBackups.length > MAX_RESET_BACKUPS) {
             const old = allBackups.shift()!;
@@ -71,12 +73,12 @@ if (fs.existsSync(DEV_DATA_DIR)) {
 }
 
 // Clean Target (Delete all, we want to mirror Live)
-if (fs.existsSync(DEV_DATA_DIR)) {
+if (fs.existsSync(TARGET_DIR)) {
     console.log(`[Sync] Cleaning target directory...`);
-    fs.rmSync(DEV_DATA_DIR, { recursive: true, force: true });
+    fs.rmSync(TARGET_DIR, { recursive: true, force: true });
 }
 // Recreate
-fs.mkdirSync(DEV_DATA_DIR, { recursive: true });
+fs.mkdirSync(TARGET_DIR, { recursive: true });
 
 // Copy Recursive
 function copyRecursive(src: string, dest: string) {
@@ -101,17 +103,17 @@ function copyRecursive(src: string, dest: string) {
 // Copy source
 try {
     console.log(`[Sync] Copying data...`);
-    copyRecursive(SOURCE_DIR, DEV_DATA_DIR);
+    copyRecursive(SOURCE_DIR, TARGET_DIR);
     
     // Copy Assets
     const SOURCE_ASSETS_DIR = path.resolve(SOURCE_DIR, '../assets');
-    const DEV_ASSETS_DIR = path.join(DEV_DATA_DIR, 'assets');
+    const TARGET_ASSETS_DIR = path.join(TARGET_DIR, 'assets');
     
     if (fs.existsSync(SOURCE_ASSETS_DIR)) {
         console.log(`[Sync] Copying assets...`);
         console.log(`[Source] ASSETS: ${SOURCE_ASSETS_DIR}`);
-        console.log(`[Target] ASSETS: ${DEV_ASSETS_DIR}`);
-        copyRecursive(SOURCE_ASSETS_DIR, DEV_ASSETS_DIR);
+        console.log(`[Target] ASSETS: ${TARGET_ASSETS_DIR}`);
+        copyRecursive(SOURCE_ASSETS_DIR, TARGET_ASSETS_DIR);
     } else {
         console.warn(`[Sync] ⚠️ Source assets dir not found at ${SOURCE_ASSETS_DIR}`);
     }
@@ -122,9 +124,9 @@ try {
     // ── GIT: Reset working tree for mock_data ──
     try {
         // Compute the git-relative path for mock_data
-        const relDevDir = path.relative(PROJECT_ROOT, DEV_DATA_DIR).replace(/\\/g, '/');
-        console.log(`[Sync] 🔄 Resetting git state for ${relDevDir}...`);
-        execSync(`git checkout -- ${relDevDir}`, { cwd: PROJECT_ROOT, stdio: 'pipe' });
+        const relTargetDir = path.relative(PROJECT_ROOT, TARGET_DIR).replace(/\\/g, '/');
+        console.log(`[Sync] 🔄 Resetting git state for ${relTargetDir}...`);
+        execSync(`git checkout -- ${relTargetDir}`, { cwd: PROJECT_ROOT, stdio: 'pipe' });
         console.log(`[Sync] Git state clean.`);
     } catch (gitErr) {
         // Non-fatal: the data is already synced, git state is just cosmetic

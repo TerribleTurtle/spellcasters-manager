@@ -1,5 +1,5 @@
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { fileService } from '../../server/services/fileService';
 import path from 'path';
 import fs from 'fs';
@@ -41,6 +41,24 @@ describe('FileService (Integration)', () => {
         expect(fs.existsSync(filePath)).toBe(true);
         const content = fs.readFileSync(filePath, 'utf-8');
         expect(JSON.parse(content)).toEqual(data);
+    });
+    
+    it('writeJson cleans up temp file on failure', async () => {
+        const filePath = path.join(TEST_DIR, 'atomic_fail.json');
+        const tempPathRegex = /atomic_fail\.json\.\d+\.tmp$/;
+        
+        // Mock fsPromises.writeFile to fail
+        vi.spyOn(fs.promises, 'writeFile').mockRejectedValueOnce(new Error('Write failed'));
+        
+        // Spy on unlink to ensure it was called
+        const unlinkSpy = vi.spyOn(fs.promises, 'unlink');
+
+        await expect(fileService.writeJson(filePath, { data: 1 })).rejects.toThrow('Write failed');
+        
+        expect(unlinkSpy).toHaveBeenCalledWith(expect.stringMatching(tempPathRegex));
+        
+        // Restore
+        vi.restoreAllMocks();
     });
 
     it('readJson reads existing file (async)', async () => {

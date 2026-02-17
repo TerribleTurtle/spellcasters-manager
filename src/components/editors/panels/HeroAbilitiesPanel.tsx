@@ -7,8 +7,10 @@ import { Plus, Trash2, Zap, ChevronDown, ChevronRight } from "lucide-react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 
+import { FieldValues } from "react-hook-form";
+
 interface HeroAbilitiesPanelProps {
-  control: Control<any>;
+  control: Control<FieldValues>;
 }
 
 /** Color theme for each ability type */
@@ -83,11 +85,11 @@ export function HeroAbilitiesPanel({ control }: HeroAbilitiesPanelProps) {
         </h3>
         {!isExpanded && fields.length > 0 && (
           <div className="flex items-center gap-1.5">
-            {abilities.map((a: any, i: number) => {
-              const colors = getTypeColor(a?.type);
+            {abilities.map((a: Record<string, unknown>, i: number) => {
+              const colors = getTypeColor(a?.type as string | undefined);
               return (
                 <span key={i} className={cn("text-micro px-1.5 py-0.5 rounded-full font-medium", colors.badge)}>
-                  {a?.name || colors.badgeText}
+                  {String(a?.name || colors.badgeText)}
                 </span>
               );
             })}

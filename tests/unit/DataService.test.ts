@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DataService } from '@/services/DataService';
 import { httpClient } from '@/lib/httpClient';
 
@@ -15,9 +14,9 @@ describe('DataService', () => {
         const mockData = ['unit1.json', 'unit2.json'];
         const spy = vi.spyOn(httpClient, 'request').mockResolvedValue(mockData);
         
-        const units = await dataService.getAll('units', 'dev');
+        const units = await dataService.getAll('units');
         
-        expect(spy).toHaveBeenCalledWith('/api/list/units?mode=dev');
+        expect(spy).toHaveBeenCalledWith('/api/list/units');
         expect(units).toEqual(mockData);
     });
 
@@ -32,9 +31,9 @@ describe('DataService', () => {
         };
         const spy = vi.spyOn(httpClient, 'request').mockResolvedValue(mockUnit);
 
-        const unit = await dataService.getById('units', 'unit1.json', 'dev');
+        const unit = await dataService.getById('units', 'unit1.json');
 
-        expect(spy).toHaveBeenCalledWith('/api/data/units/unit1.json?mode=dev');
+        expect(spy).toHaveBeenCalledWith('/api/data/units/unit1.json');
         expect(unit).toEqual(mockUnit);
     });
 
@@ -49,7 +48,7 @@ describe('DataService', () => {
         vi.spyOn(httpClient, 'request').mockResolvedValue(invalidUnit);
 
         // @ts-ignore
-        await expect(dataService.getById('units', 'unit1.json', 'dev', mockSchema)).rejects.toThrow('Validation failed');
+        await expect(dataService.getById('units', 'unit1.json', mockSchema)).rejects.toThrow('Validation failed');
     });
 
     it('save sends correct data', async () => {
@@ -62,10 +61,10 @@ describe('DataService', () => {
         const spy = vi.spyOn(httpClient, 'request').mockResolvedValue(undefined);
 
         // @ts-ignore
-        await dataService.save('units', 'unit1.json', mockUnit, 'dev');
+        await dataService.save('units', 'unit1.json', mockUnit);
 
         expect(spy).toHaveBeenCalledWith(
-          expect.stringContaining('/api/save/units/unit1.json?mode=dev'),
+          expect.stringContaining('/api/save/units/unit1.json'),
           expect.objectContaining({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

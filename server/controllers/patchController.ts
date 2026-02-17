@@ -1,28 +1,27 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { patchService } from '../services/patchService.js';
 import { backupService } from '../services/backupService.js';
 import { logger } from '../utils/logger.js';
-import { Change } from '../../src/domain/schemas.js';
+import { Change } from '../../src/domain/schemas/index.js';
+import { AppError } from '../utils/AppError.js';
 
 /**
  * "Silent Save + Tag" - Saves a file and immediately creates a patch entry
  * without going through the queue.
  */
-export const quickSave = async (req: Request, res: Response) => {
+export const quickSave = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { change, tags, version } = req.body;
         const { dataDir } = req.context;
 
         if (!change) {
-            res.status(400).json({ error: "Change object required" });
-            return;
+            return next(AppError.badRequest("Change object required"));
         }
 
         const patch = await patchService.quickSave(dataDir, change, version, tags);
         res.json({ success: true, patch });
     } catch (error: unknown) {
-        logger.error("quickSave Error:", { error });
-        res.status(500).json({ error: (error as Error).message });
+        next(error);
     }
 };
 
@@ -30,30 +29,23 @@ export const quickSave = async (req: Request, res: Response) => {
  * Commits all queued changes into a new versioned patch.
  * Writes to patches.json and triggers a git commit.
  */
-export const commitPatch = async (req: Request, res: Response) => {
+export const commitPatch = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { title, version, type, tags } = req.body;
         const { dataDir } = req.context;
 
         // Phase 4: Create backup before commit
         try {
-            backupService.createBackup(dataDir);
+            await backupService.createBackup(dataDir);
         } catch (backupError) {
             logger.error("Pre-commit backup failed", { error: backupError });
-            res.status(500).json({ error: "Backup failed. Commit aborted." });
-            return;
+            throw AppError.internal("Backup failed. Commit aborted.");
         }
 
         const patch = await patchService.commitPatch(dataDir, title, version, type, tags);
         res.json({ success: true, patch });
     } catch (error: unknown) {
-        logger.error("commitPatch Error:", { error });
-        const msg = (error as Error).message;
-        if (msg === "No queued changes to commit") {
-            res.status(400).json({ error: msg });
-        } else {
-            res.status(500).json({ error: msg });
-        }
+        next(error);
     }
 };
 
@@ -61,7 +53,7 @@ export const commitPatch = async (req: Request, res: Response) => {
  * Retrieves the history of published patches.
  * Supports filtering by tag or entity ID.
  */
-export const getPatchHistory = async (req: Request, res: Response) => {
+export const getPatchHistory = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { dataDir } = req.context;
         const { tag, entity, flat, from, to } = req.query;
@@ -78,7 +70,8 @@ export const getPatchHistory = async (req: Request, res: Response) => {
                     patch_version: p.version,
                     patch_date: p.date,
                     patch_title: p.title,
-                    patch_tags: p.tags
+                    patch_tags: p.tags,
+                    patch_diff: p.diff
                 }))
             );
             
@@ -99,15 +92,14 @@ export const getPatchHistory = async (req: Request, res: Response) => {
 
         res.json(patches);
     } catch (error: unknown) {
-        logger.error("getPatchHistory Error:", { error });
-        res.status(500).json({ error: (error as Error).message });
+        next(error);
     }
 };
 
 /**
  * Reverts a specific patch by creating a counter-patch with inverse changes.
  */
-export const rollbackPatch = async (req: Request, res: Response) => {
+export const rollbackPatch = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
         const { dataDir } = req.context;
@@ -115,12 +107,6 @@ export const rollbackPatch = async (req: Request, res: Response) => {
         const patch = await patchService.rollbackPatch(dataDir, id as string);
         res.json({ success: true, patch });
     } catch (error: unknown) {
-        logger.error("rollbackPatch Error:", { error });
-        const msg = (error as Error).message;
-        if (msg === "No patches found" || msg === "Patch not found") {
-            res.status(404).json({ error: msg });
-        } else {
-            res.status(500).json({ error: msg });
-        }
+        next(error);
     }
 };

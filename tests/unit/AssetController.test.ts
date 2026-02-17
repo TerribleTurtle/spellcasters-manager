@@ -13,11 +13,13 @@ describe('AssetController', () => {
     let jsonSpy: any;
     let statusSpy: any;
     let sendSpy: any;
+    let nextSpy: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
         jsonSpy = vi.fn();
         sendSpy = vi.fn();
+        nextSpy = vi.fn();
         statusSpy = vi.fn().mockReturnValue({ send: sendSpy, json: jsonSpy });
         
         mockRes = {
@@ -47,16 +49,15 @@ describe('AssetController', () => {
     describe('uploadAsset', () => {
         it('rejects if no file uploaded', () => {
             mockReq.file = undefined;
-            uploadAsset(mockReq, mockRes as Response);
-            expect(statusSpy).toHaveBeenCalledWith(400);
-            expect(sendSpy).toHaveBeenCalledWith('No file uploaded.');
+            uploadAsset(mockReq, mockRes as Response, nextSpy);
+            expect(nextSpy).toHaveBeenCalledWith(expect.objectContaining({ message: 'No file uploaded.' }));
         });
 
         it('moves uploaded file to assets dir', () => {
             mockReq.body = { targetFilename: 'hero.png' };
             (fs.existsSync as any).mockReturnValue(true);
 
-            uploadAsset(mockReq, mockRes as Response);
+            uploadAsset(mockReq, mockRes as Response, nextSpy);
 
             expect(fs.renameSync).toHaveBeenCalledWith(
                 'temp/upload.png', 
@@ -69,7 +70,7 @@ describe('AssetController', () => {
             mockReq.body = { targetFilename: '../../hack.exe' };
             (fs.existsSync as any).mockReturnValue(true);
 
-            uploadAsset(mockReq, mockRes as Response);
+            uploadAsset(mockReq, mockRes as Response, nextSpy);
 
             // path.basename('../../hack.exe') -> 'hack.exe'
             expect(fs.renameSync).toHaveBeenCalledWith(
@@ -82,7 +83,7 @@ describe('AssetController', () => {
             mockReq.body = { targetFilename: 'hero.png' };
             (fs.existsSync as any).mockReturnValue(false);
 
-            uploadAsset(mockReq, mockRes as Response);
+            uploadAsset(mockReq, mockRes as Response, nextSpy);
 
             expect(fs.mkdirSync).toHaveBeenCalledWith(
                 expect.stringMatching(/root[/\\]data[/\\]assets/), 

@@ -47,7 +47,7 @@ describe('GitService', () => {
 
         expect(changes).toHaveLength(1);
         expect(changes[0]).toEqual({
-            target_id: 'u1',
+            target_id: 'test.json',
             name: 'New Name',
             field: 'name',
             old: 'Old Name',

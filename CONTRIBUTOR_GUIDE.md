@@ -81,21 +81,24 @@ spellcasters-workspace/
 
 ## Step 3: Configure The Grimoire
 
-The Grimoire needs to know where your fork's data lives. Inside the `spellcasters-manager` folder, create a file called `.env`:
+The Grimoire needs to know where your data lives. Inside the `spellcasters-manager` folder, create a file called `.env`:
 
 **Windows (cmd):**
 
 ```cmd
-echo DEV_DATA_DIR=./mock_data > .env
-echo LIVE_DATA_DIR=../spellcasters-community-api/data >> .env
+echo DATA_DIR=../spellcasters-community-api/data > .env
 ```
 
 **Mac / Linux:**
 
 ```bash
-echo 'DEV_DATA_DIR=./mock_data' > .env
-echo 'LIVE_DATA_DIR=../spellcasters-community-api/data' >> .env
+echo 'DATA_DIR=../spellcasters-community-api/data' > .env
 ```
+
+> [!TIP]
+> To practice without touching your fork, point at the built-in sandbox instead:
+> `DATA_DIR=./mock_data`
+> Change the path and restart — the server behaves identically either way.
 
 ---
 
@@ -118,18 +121,12 @@ You'll see some output in the terminal. After a few seconds, open your browser a
 
 ---
 
-## Step 5: Switch to LIVE Mode
+## Step 5: Verify Your Data
 
-When the app first opens, you're in **DEV Mode** (blue badge in the header). This is a safe sandbox for practice.
-
-When you're ready to make real changes:
-
-1. Click the **DEV** badge in the top header
-2. Switch to **LIVE**
-3. The theme turns **red** as a reminder — you're now editing the real API data in your fork
+The Grimoire reads and writes whatever directory `DATA_DIR` points at. If it's your fork's `data/` folder, you're editing real API data. If it's `./mock_data`, you're in a safe sandbox.
 
 > [!TIP]
-> Practice in DEV mode first! You can freely experiment without affecting your fork.
+> Practice with `DATA_DIR=./mock_data` first. When you're ready, change `.env` to `DATA_DIR=../spellcasters-community-api/data`, restart, and you're editing your fork.
 
 ---
 
@@ -205,25 +202,25 @@ A maintainer will review your changes and merge them if everything looks good. �
 
 ## Quick Reference
 
-| Action                  | How                           |
-| ----------------------- | ----------------------------- |
-| Save (no tracking)      | `Ctrl + S`                    |
-| Save + Tag (tracked)    | `Ctrl + Shift + S`            |
-| Close dialog / deselect | `Escape`                      |
-| Switch DEV ↔ LIVE       | Click the badge in the header |
-| Stop The Grimoire       | `Ctrl + C` in the terminal    |
+| Action                  | How                                     |
+| ----------------------- | --------------------------------------- |
+| Save (no tracking)      | `Ctrl + S`                              |
+| Save + Tag (tracked)    | `Ctrl + Shift + S`                      |
+| Close dialog / deselect | `Escape`                                |
+| Switch data directory   | Change `DATA_DIR` in `.env` and restart |
+| Stop The Grimoire       | `Ctrl + C` in the terminal              |
 
 ---
 
 ## Troubleshooting
 
-| Problem                             | Solution                                                                                |
-| ----------------------------------- | --------------------------------------------------------------------------------------- |
-| **Red dot in header**               | The backend isn't running. Make sure you ran `npm run dev:all` (not just `npm run dev`) |
-| **"Connection refused" in browser** | Wait 5–10 seconds after running `npm run dev:all`, then refresh                         |
-| **Can't push to GitHub**            | Make sure you cloned **your fork**, not the original repo                               |
-| **Image upload fails**              | Images must be under 5 MB                                                               |
-| **Data looks wrong after editing**  | Switch to DEV mode and use `Reset Data` in the sidebar footer to restore defaults       |
+| Problem                             | Solution                                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Red dot in header**               | The backend isn't running. Make sure you ran `npm run dev:all` (not just `npm run dev`)   |
+| **"Connection refused" in browser** | Wait 5–10 seconds after running `npm run dev:all`, then refresh                           |
+| **Can't push to GitHub**            | Make sure you cloned **your fork**, not the original repo                                 |
+| **Image upload fails**              | Images must be under 5 MB                                                                 |
+| **Data looks wrong after editing**  | Run `npm run sync-data` to re-copy from the source, or change `DATA_DIR` to `./mock_data` |
 
 ---
 

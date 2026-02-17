@@ -8,18 +8,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { JsonDiff } from "@/components/ui/JsonDiff";
-import { Save, GitBranchPlus, Tag } from "lucide-react";
+import { Save, GitBranchPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export type SaveType = 'silent' | 'quick' | 'queue';
+export type SaveType = 'silent' | 'queue';
 
 interface SavePreviewDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   onCancel: () => void;
-  oldData: any;
-  newData: any;
+  oldData: unknown;
+  newData: unknown;
   saveType: SaveType;
   isNew?: boolean;
 }
@@ -38,7 +38,6 @@ export function SavePreviewDialog({
   const getActionLabel = () => {
       switch(saveType) {
           case 'silent': return isNew ? "Create File" : "Save File";
-          case 'quick': return isNew ? "Create + Tag" : "Save + Tag";
           case 'queue': return "Add to Queue";
       }
   };
@@ -46,7 +45,6 @@ export function SavePreviewDialog({
   const getIcon = () => {
       switch(saveType) {
           case 'silent': return <Save className="w-4 h-4 mr-2" />;
-          case 'quick': return <Tag className="w-4 h-4 mr-2" />;
           case 'queue': return <GitBranchPlus className="w-4 h-4 mr-2" />;
       }
   };

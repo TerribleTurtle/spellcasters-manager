@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/select"
 import { Search, Ghost, ArrowUpDown } from 'lucide-react';
 
-export interface EntityListHash {
-    id: string; // filename
-    category: string; // for icon
-}
+import { EntityListHash } from "@/types";
 
 interface EntityListProps {
     items: EntityListHash[];

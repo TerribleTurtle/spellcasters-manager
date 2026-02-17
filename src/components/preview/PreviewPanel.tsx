@@ -1,15 +1,11 @@
 import { SitePreview } from "./SitePreview";
+import { Unit } from "@/domain/schemas";
 import { cn } from "@/lib/utils";
-import { AppMode } from "@/types";
 import { Hammer } from "lucide-react";
 
-interface PreviewPanelProps {
-  isOpen: boolean;
-  unitData: any;
-  mode: AppMode;
-}
 
-export function PreviewPanel({ isOpen, unitData, mode }: PreviewPanelProps) {
+
+export function PreviewPanel({ isOpen, unitData }: { isOpen: boolean, unitData: unknown }) {
   return (
     <div 
         className={cn(
@@ -24,14 +20,14 @@ export function PreviewPanel({ isOpen, unitData, mode }: PreviewPanelProps) {
                 Live Preview
             </span>
             <div className="ml-auto text-xs text-muted-foreground font-mono opacity-70">
-                {mode === 'live' ? 'PROD' : 'DEV'} MOCK
+                PREVIEW
             </div>
         </div>
         
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-hidden relative">
             {unitData ? (
-                 <SitePreview data={unitData} mode={mode} />
+                 <SitePreview data={unitData as Unit} />
             ) : (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-6 text-center">
                     <Hammer className="w-12 h-12 mb-4 opacity-20" />

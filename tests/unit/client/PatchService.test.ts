@@ -14,7 +14,6 @@ vi.mock('@/lib/httpClient', () => ({
 
 describe('Client PatchService', () => {
     let service: PatchService;
-    const mode = 'dev';
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -25,9 +24,9 @@ describe('Client PatchService', () => {
         const mockQueue = [{ target_id: '1' }];
         requestMock.mockResolvedValue(mockQueue);
 
-        const result = await service.getQueue(mode);
+        const result = await service.getQueue();
 
-        expect(requestMock).toHaveBeenCalledWith(`/api/patches/queue?mode=${mode}`);
+        expect(requestMock).toHaveBeenCalledWith(`/api/patches/queue`);
         expect(result).toEqual(mockQueue);
     });
 
@@ -35,10 +34,10 @@ describe('Client PatchService', () => {
         const change = { target_id: '1', field: 'name', new: 'B' };
         requestMock.mockResolvedValue({ success: true });
 
-        await service.addToQueue(mode, change as any);
+        await service.addToQueue(change as any);
 
         expect(requestMock).toHaveBeenCalledWith(
-            `/api/patches/queue?mode=${mode}`,
+            `/api/patches/queue`,
             expect.objectContaining({
                 method: 'POST',
                 body: JSON.stringify({ change })
@@ -50,10 +49,10 @@ describe('Client PatchService', () => {
         const payload = { title: 'T', version: '1.0', type: 'fix', tags: [] };
         requestMock.mockResolvedValue({ success: true });
 
-        await service.commit(mode, payload);
+        await service.commit(payload);
 
         expect(requestMock).toHaveBeenCalledWith(
-            `/api/patches/commit?mode=${mode}`,
+            `/api/patches/commit`,
             expect.objectContaining({
                 method: 'POST',
                 body: JSON.stringify(payload)
@@ -64,9 +63,9 @@ describe('Client PatchService', () => {
     it('getHistory constructs query parameters', async () => {
         requestMock.mockResolvedValue([]);
 
-        await service.getHistory(mode, { tag: 'buff', from: '2023-01-01' });
+        await service.getHistory({ tag: 'buff', from: '2023-01-01' });
 
-        const expectedUrl = `/api/patches/history?mode=${mode}&tag=buff&from=2023-01-01`;
+        const expectedUrl = `/api/patches/history?tag=buff&from=2023-01-01`;
         expect(requestMock).toHaveBeenCalledWith(expectedUrl);
     });
 });

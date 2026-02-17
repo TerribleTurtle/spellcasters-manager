@@ -1,6 +1,5 @@
 import { Unit } from "@/domain/schemas";
 import { getSchoolTheme } from "./schoolColors";
-import { AppMode } from "@/types";
 import { 
   ArrowLeft, 
   History, 
@@ -18,7 +17,6 @@ import {
 
 interface PreviewDetailPageProps {
   data: Unit;
-  mode: AppMode;
 }
 
 // Stat Grid Item
@@ -33,7 +31,7 @@ function StatItem({ label, value, icon: Icon, colorClass }: { label: string; val
   );
 }
 
-export function PreviewDetailPage({ data, mode }: PreviewDetailPageProps) {
+export function PreviewDetailPage({ data }: PreviewDetailPageProps) {
   const theme = getSchoolTheme(data.magic_school);
   
   const name = data.name || "Unknown Unit";
@@ -91,7 +89,7 @@ export function PreviewDetailPage({ data, mode }: PreviewDetailPageProps) {
              <div className="w-48 h-48 relative flex items-center justify-center">
                  {data.icon ? (
                      <img 
-                        src={`/api/assets/${mode}/${data.icon}`} 
+                        src={`/api/assets/${data.icon}`} 
                         alt={name}
                         className="w-full h-full object-contain drop-shadow-2xl relative z-10"
                         onError={(e) => {

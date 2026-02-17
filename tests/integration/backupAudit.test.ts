@@ -38,10 +38,10 @@ describe('Backup & Audit Integration', () => {
         expect(content.foo).toBe('bar');
     });
 
-    it('AuditLogger appends to audit.jsonl', () => {
+    it('AuditLogger appends to audit.jsonl', async () => {
         const logFile = path.join(testDir, 'audit.jsonl');
         
-        auditLogger.logAction(testDir, 'TEST_ACTION', { id: 123 }, 'TestUser');
+        await auditLogger.logAction(testDir, 'TEST_ACTION', { id: 123 }, 'TestUser');
         
         expect(fs.existsSync(logFile)).toBe(true);
         
@@ -54,7 +54,7 @@ describe('Backup & Audit Integration', () => {
         expect(entry.timestamp).toBeDefined();
 
         // Append second log
-        auditLogger.logAction(testDir, 'SECOND_ACTION', {}, 'TestUser');
+        await auditLogger.logAction(testDir, 'SECOND_ACTION', {}, 'TestUser');
         const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n');
         expect(lines.length).toBe(2);
     });

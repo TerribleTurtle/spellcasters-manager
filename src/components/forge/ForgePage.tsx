@@ -1,25 +1,16 @@
-import { AppMode } from "@/types";
-import { UnitEditor } from "@/components/editors/UnitEditor";
-import { HeroEditor } from "@/components/editors/HeroEditor";
-import { ConsumableEditor } from "@/components/editors/ConsumableEditor";
-
+import { Change } from "@/types";
 import { useState } from "react";
 import { PreviewPanel } from "@/components/preview/PreviewPanel";
 import { cn } from "@/lib/utils";
 import { Hammer, X, Loader2, Plus, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EDITOR_MAP } from "@/config/editorRegistry";
 
-// Registry Maps
-const EDITOR_MAP: Record<string, any> = {
-    'units': UnitEditor, 'unit': UnitEditor, 'structure': UnitEditor, 'titans': UnitEditor,
-    'heroes': HeroEditor, 'hero': HeroEditor,
-    'items': ConsumableEditor, 'consumables': ConsumableEditor, 'consumable': ConsumableEditor, 'spells': ConsumableEditor, 'spell': ConsumableEditor
-};
+
 
 interface ForgePageProps {
-  mode: AppMode;
   selectedUnit: string | null;
-  unitData: any;
+  unitData: Record<string, unknown> | null;
   currentCategory: string;
   onUnitSaved: () => void;
   onUnitCreated: (filename: string) => void;
@@ -31,11 +22,13 @@ interface ForgePageProps {
   onCreateCancel?: () => void;
 
   onCreateStart?: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onDuplicate?: (data: any) => void;
+  restoredChange?: Change | null;
+  onDiscardRestoredChange?: () => void;
 }
 
 export function ForgePage({
-  mode,
   selectedUnit,
   unitData,
   currentCategory,
@@ -49,7 +42,9 @@ export function ForgePage({
   isCreating,
     onCreateCancel,
   onCreateStart,
-  onDuplicate
+  onDuplicate,
+  restoredChange,
+  onDiscardRestoredChange
 }: ForgePageProps) {
   const [showPreview, setShowPreview] = useState(false);
 
@@ -65,11 +60,12 @@ export function ForgePage({
             <div className="flex h-full w-full overflow-hidden bg-background">
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                     <EditorComponent 
-                        filename="new_entity.json" // Placeholder, ignored by generatedFilename logic
-                        mode={mode} 
-                        onSave={onUnitCreated} // When created, it's "saved", so we trigger the created callback
+                        filename="new_entity.json"
+                        initialData={unitData}
+                        onSave={(_data, filename) => onUnitCreated(filename || 'new_entity.json')} 
                         isNew={true}
                         onNavigateToScribe={onNavigateToScribe}
+                        onDirtyChange={onDirtyChange}
                     />
                 </div>
             </div>
@@ -89,7 +85,7 @@ export function ForgePage({
             {onCreateStart && (
                 <Button onClick={onCreateStart} className="gap-2">
                     <Plus className="w-4 h-4" />
-                    Create New {currentCategory.slice(0, -1)}
+                    Create New {currentCategory.endsWith('s') ? currentCategory.slice(0, -1) : currentCategory}
                 </Button>
             )}
         </div>
@@ -103,7 +99,7 @@ export function ForgePage({
     );
 
     // Show Editor
-    const key = `${selectedUnit}-${mode}`; // Force re-mount on selection/mode change
+    const key = `${selectedUnit}`; // Force re-mount on selection change
     const type = editorType || currentCategory;
     const EditorComponent = EDITOR_MAP[type];
 
@@ -112,12 +108,13 @@ export function ForgePage({
             <EditorComponent 
                 key={key} 
                 filename={selectedUnit} 
-                initialData={unitData} 
-                mode={mode} 
+                initialData={unitData}
                 onSave={handleSave} 
                 onNavigateToScribe={onNavigateToScribe} 
                 onDirtyChange={onDirtyChange} 
                 onDuplicate={onDuplicate}
+                restoredChange={restoredChange}
+                onDiscardRestoredChange={onDiscardRestoredChange}
             />
         );
     }
@@ -178,7 +175,7 @@ export function ForgePage({
       </div>
 
       {/* Right Column: Preview Panel */}
-      <PreviewPanel isOpen={showPreview && !!selectedUnit} unitData={unitData} mode={mode} />
+      <PreviewPanel isOpen={showPreview && !!selectedUnit} unitData={unitData} />
     </div>
   );
 }
