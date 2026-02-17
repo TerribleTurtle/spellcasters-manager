@@ -27,6 +27,10 @@ describe('Single File Backup Integration', () => {
     });
 
     it('creates a backup when saving data', async () => {
+        // Use fake timers to control Date.now()
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+        
         // 1. Initial Save (no backup as file doesn't exist yet)
         await dataService.saveData(testDir, 'units', 'test_unit.json', { name: 'v1' });
         
@@ -40,7 +44,7 @@ describe('Single File Backup Integration', () => {
         }
 
         // 2. Second Save (should create backup of v1)
-        await new Promise(r => setTimeout(r, 100)); // Ensure timestamp diff
+        vi.advanceTimersByTime(1000); // Advance 1 second to ensure unique timestamp
         await dataService.saveData(testDir, 'units', 'test_unit.json', { name: 'v2' });
         
         // Should have 1 backup
@@ -58,9 +62,15 @@ describe('Single File Backup Integration', () => {
         const currentFile = path.join(testDir, 'units', 'test_unit.json');
         const currentContent = JSON.parse(fs.readFileSync(currentFile, 'utf-8'));
         expect(currentContent.name).toBe('v2');
+        
+        vi.useRealTimers();
     });
 
     it('rotates backups correctly (max 5)', async () => {
+        // Use fake timers to control Date.now()
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+        
         // Setup initial file (v0)
         await dataService.saveData(testDir, 'units', 'rotate.json', { v: 0 });
         
@@ -71,7 +81,7 @@ describe('Single File Backup Integration', () => {
         // Max 5 allowed. Simplest rotation keeps newest 5. So v0 should be deleted.
         
         for (let i = 1; i <= 6; i++) {
-            await new Promise(r => setTimeout(r, 100)); 
+            vi.advanceTimersByTime(1000); // Advance 1 second for unique timestamp
             await dataService.saveData(testDir, 'units', 'rotate.json', { v: i });
         }
 
@@ -89,5 +99,7 @@ describe('Single File Backup Integration', () => {
         // Newest backup should be v5
         const last = JSON.parse(fs.readFileSync(path.join(backupRoot, sorted[4]), 'utf-8'));
         expect(last.v).toBe(5);
+        
+        vi.useRealTimers();
     });
 });

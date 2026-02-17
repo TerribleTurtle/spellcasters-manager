@@ -16,7 +16,8 @@ export function useDiffLogic<T>(initialData: T | Partial<T> | undefined) {
     const requestSave = (
         type: 'silent' | 'queue',
         newData: Partial<T>,
-        executeSave: (finalData: T) => Promise<void>
+        executeSave: (finalData: T) => Promise<void>,
+        skipPreview: boolean = false
     ) => {
         // Safe check for new entities or simple diff
         const isNew = !initialData || (Object.keys(initialData).length === 0);
@@ -44,6 +45,12 @@ export function useDiffLogic<T>(initialData: T | Partial<T> | undefined) {
 
         if (!isNew && !hasChanges) {
              success("No changes detected");
+             return;
+        }
+        
+        // SKIP LOGIC
+        if (isNew || skipPreview) {
+             void executeSave(finalData);
              return;
         }
 

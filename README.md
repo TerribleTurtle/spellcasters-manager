@@ -97,7 +97,7 @@ When publishing, the Manager generates static JSON files for the community API (
 ### Installation
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/TerribleTurtle/spellcasters-manager.git
 cd spellcasters-manager
 npm install
 ```
@@ -130,17 +130,18 @@ PORT=3001           # Backend server port (default: 3001)
 ### Testing
 
 ```bash
-npm test               # Full suite (Unit + Integration + Client Services)
+npm test               # Full suite (Unit + Integration + Hooks + Components)
 npm run test:coverage  # Generate coverage report
 ```
 
 The test suite covers:
 
-- **Server Unit Tests**: Controllers, Services (Git, File, Patch, Queue), Utils.
-- **Integration Tests**: Data flow, Backup/Audit, Batch operations.
-- **Client Service Tests**: HttpClient, PatchService (API layer).
+- **Server Unit Tests**: Controllers, Services (Git, File, Patch, Queue, Import, Publisher, Dev), Utils.
+- **Integration Tests**: Data flow, Backup/Audit, Batch operations, Patch commit.
+- **Frontend Hook Tests**: useEntityMutation, useEditorActions, useEntitySelection, useEditorForm.
+- **Component Smoke Tests**: TableEditor, AppSidebar.
 
-**Current Coverage**: ~100% Backend Unit/Integration/Security + Critical Client Paths.
+**Current Suite**: 173 tests across 31 files.
 
 ## Data Management
 
@@ -152,3 +153,11 @@ The test suite covers:
 ## License
 
 MIT
+
+## 🌐 Part of the Spellcasters Ecosystem
+
+- **[Spellcasters Community API](https://github.com/TerribleTurtle/spellcasters-community-api)** — The shared data source (GitHub Pages)
+- **[SpellcastersDB](https://github.com/TerribleTurtle/spellcastersdb)** — The public database & deckbuilder
+- **[Spellcasters Bot](https://github.com/TerribleTurtle/spellcasters-bot)** — Discord integration
+
+> All tools consume the same [Community API v2](https://terribleturtle.github.io/spellcasters-community-api/api/v2/).

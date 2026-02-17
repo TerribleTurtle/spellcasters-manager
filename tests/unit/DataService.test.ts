@@ -41,13 +41,11 @@ describe('DataService', () => {
         // DataService validation is optional. Inject a mock schema that throws.
         const mockSchema = {
             parse: vi.fn().mockImplementation(() => { throw new Error('Validation failed'); })
-        };
+        } as unknown as z.ZodType<unknown>;
 
         const invalidUnit = { id: 'u1' }; 
-        // @ts-ignore
         vi.spyOn(httpClient, 'request').mockResolvedValue(invalidUnit);
 
-        // @ts-ignore
         await expect(dataService.getById('units', 'unit1.json', mockSchema)).rejects.toThrow('Validation failed');
     });
 
@@ -60,7 +58,6 @@ describe('DataService', () => {
         };
         const spy = vi.spyOn(httpClient, 'request').mockResolvedValue(undefined);
 
-        // @ts-ignore
         await dataService.save('units', 'unit1.json', mockUnit);
 
         expect(spy).toHaveBeenCalledWith(

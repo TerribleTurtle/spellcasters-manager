@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getData, saveData, deleteData, listFiles, saveBatch, importData } from '../../server/controllers/dataController';
 import { fileService } from '../../server/services/fileService';
 import { dataService } from '../../server/services/dataService';
+import { importService } from '../../server/services/importService';
 import { Response } from 'express';
 import { createMockRequest, MockRequest } from '../helpers/mockRequest';
 import path from 'path';
@@ -130,28 +131,28 @@ describe('DataController', () => {
     describe('importData', () => {
         it('imports data successfully', async () => {
             mockReq.body = { data: { units: [] } };
-            vi.spyOn(dataService, 'importData').mockResolvedValue({ success: true, imported: 0, errors: [] });
+            vi.spyOn(importService, 'importData').mockResolvedValue({ success: true, imported: 0, errors: [] });
             
             await importData(mockReq, mockRes as Response, nextSpy);
             
-            expect(dataService.importData).toHaveBeenCalledWith('root/data', { units: [] }, false);
+            expect(importService.importData).toHaveBeenCalledWith('root/data', { units: [] }, false);
             expect(jsonSpy).toHaveBeenCalled();
         });
 
         it('passes queue flag when query param is present', async () => {
              mockReq.body = { data: { units: [] } };
              mockReq.query = { queue: 'true' };
-             vi.spyOn(dataService, 'importData').mockResolvedValue({ success: true, imported: 0, errors: [] });
+             vi.spyOn(importService, 'importData').mockResolvedValue({ success: true, imported: 0, errors: [] });
              
              await importData(mockReq, mockRes as Response, nextSpy);
              
-             expect(dataService.importData).toHaveBeenCalledWith('root/data', { units: [] }, true);
+             expect(importService.importData).toHaveBeenCalledWith('root/data', { units: [] }, true);
         });
 
         it('handles import errors', async () => {
              mockReq.body = { data: {} };
              const error = new Error('Import failed');
-             vi.spyOn(dataService, 'importData').mockRejectedValue(error);
+             vi.spyOn(importService, 'importData').mockRejectedValue(error);
              
              await importData(mockReq, mockRes as Response, nextSpy);
              

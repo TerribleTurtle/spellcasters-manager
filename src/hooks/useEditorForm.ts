@@ -85,10 +85,16 @@ export function useEditorForm<T extends { id?: string }>({
     }
   }, [normalizedInitial, form]);
 
-  // Report dirty state to parent
+  // Report dirty state to parent via deep comparison
+  // RHF's isDirty uses strict equality (===), which gives false positives
+  // for objects/arrays that were re-created with different references.
+  const currentValues = form.watch();
+  
   useEffect(() => {
-    onDirtyChange?.(form.formState.isDirty);
-  }, [form.formState.isDirty, onDirtyChange]);
+    const defaults = form.formState.defaultValues;
+    const isActuallyDirty = JSON.stringify(currentValues) !== JSON.stringify(defaults);
+    onDirtyChange?.(isActuallyDirty);
+  }, [currentValues, onDirtyChange, form.formState.defaultValues]);
 
   // Editor actions (save, queue, delete, diff preview)
   const editorActions = useEditorActions({
@@ -97,7 +103,10 @@ export function useEditorForm<T extends { id?: string }>({
     initialData: baseData || initialData,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSave: (data?: any, savedFilename?: string) => {
-      if (data) form.reset(data);
+      if (data) {
+          form.reset(data);
+          onDirtyChange?.(false);
+      }
       onSave?.(data, savedFilename);
     },
     onNavigateToScribe,
@@ -120,12 +129,14 @@ export function useEditorForm<T extends { id?: string }>({
   // Pre-bound action handlers
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSaveAction = (data: any) => {
-    editorActions.handleSave(data, isNew ? generatedFilename : undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    editorActions.handleSave(data, isNew ? generatedFilename : undefined, (config as any).skipDiff);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleQueueAction = (data: any) => {
-    editorActions.handleAddToQueue(data, isNew ? generatedFilename : undefined);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    editorActions.handleAddToQueue(data, isNew ? generatedFilename : undefined, (config as any).skipDiff);
   };
 
   const handleReset = () => {

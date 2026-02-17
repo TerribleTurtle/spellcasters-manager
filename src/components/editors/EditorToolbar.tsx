@@ -81,7 +81,7 @@ export function EditorToolbar({
 
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="sm"
           className="gap-1.5 text-xs"
           onClick={onQueue}
@@ -94,7 +94,7 @@ export function EditorToolbar({
 
         <Button
           type="button"
-          variant="default"
+          variant="outline"
           size="sm"
           className="gap-1.5 text-xs"
           onClick={onSave}

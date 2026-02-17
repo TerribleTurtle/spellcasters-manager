@@ -14,7 +14,7 @@
 
 ## Current Status
 
-**Phase:** Phase 10: Release Ready (v1.0.2)
+**Phase:** Phase 10: Release Ready (v1.0.3)
 **Focus:** Deployment & Maintenance
 **Test Coverage:** 115 Tests Passing (100% Backend Unit/Integration/Security + Client Services)
 
@@ -89,6 +89,7 @@
 - [x] Windows Sync Fix: `devController.ts` — use `tsx.cmd` + `shell: true` on Windows so `execFile` can spawn the `.cmd` shim.
 - [x] Deployment Fixes: Resolved 27 TSC errors (type narrowing on `unknown` values) across 10 files, stabilized flaky backup test. 115/115 tests, TSC clean.
 - [x] Cleanup-8 (Docs): Documentation audit & fixes. `USER_GUIDE.md` rewritten (removed DEV/LIVE, Save+Tag). `README.md` workflow table corrected. `.env.example` completed. Dead `'quick'` save type removed from `SavePreviewDialog` + `useDiffLogic`. TSC clean, 115/115 tests, lint 0 errors.
+- [x] Refactoring Audit #3: Full codebase audit. Extracted `ImportService` from `DataService` (365→210 lines). 115/115 tests.
 
 ### Planned
 
@@ -99,4 +100,11 @@
 - [x] UI Wiring Audit: Verified all buttons/workflows. Added missing feedback to `DiffCard`. Cleaned up orphaned dialogs.
 - [x] Final Cleanup (Release Polish): Removed stale `scripts/`, `dist/`. Fixed all lint errors (strict mode). Updated codebase patterns.
 - [x] Final Audit (/cleanup-5): Passed (Lint clean, Tests passing, Build verified). Regressions in DataService fixed.
-- [ ] Deployment to staging/prod environment
+- [x] Dirty State Fix: Reverting changes now correctly clears "unsaved changes" warning (replaced strict equality with deep comparison in `useEditorForm`).
+- [x] Test Audit (/test-audit): Grade B+. 2 critical (setTimeout flakiness, misplaced test), 10 coverage gaps (zero frontend component tests, 5 untested services/hooks), 4 cleanup items. Remediation plan produced.
+- [x] Test Remediation Phase 1: Stabilization complete. Fixed flakiness (fake timers), moved FileService.test.ts to integration, removed @ts-ignore. 16/16 tests passing.
+- [x] Test Remediation Phase 2: Backend coverage complete. Added DevController (8), ImportService (11), PublisherService (8) = 27 new tests. Suite total: 152 passing.
+- [x] Test Remediation Phase 3: Frontend logic complete. Added useEntityMutation (5), useEditorActions (5), useEntitySelection (6) = 16 new tests. Suite total: 168 passing.
+- [x] Test Remediation Phase 4: Frontend smoke tests complete. Added TableEditor (2) and AppSidebar (3). Suite total: 173 passing. Mission Accomplished.
+- [x] Test Infra: Added `@testing-library/react`, `jsdom` testing dependencies. Created `src/hooks/useEditorForm.test.tsx` regression suite.
+- [x] Deployment Verification (v1.0.3): TSC clean, Lint clean, 173/173 tests, secrets scan clear, CHANGELOG updated, CI branch fixed.

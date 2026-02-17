@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/AppError.js';
 import { fileService } from '../services/fileService.js';
 import { dataService } from '../services/dataService.js';
+import { importService } from '../services/importService.js';
 import { patchService } from '../services/patchService.js';
 
 import { queueService } from '../services/queueService.js';
@@ -118,7 +119,7 @@ export const exportData = async (req: Request, res: Response, next: NextFunction
     const { dataDir } = req.context;
 
     try {
-        const exportPayload = await dataService.exportData(dataDir);
+        const exportPayload = await importService.exportData(dataDir);
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', `attachment; filename="backup-${new Date().toISOString().split('T')[0]}.json"`);
         res.json(exportPayload);
@@ -133,7 +134,7 @@ export const importData = async (req: Request, res: Response, next: NextFunction
     const { queue } = req.query;
 
     try {
-        const report = await dataService.importData(dataDir, data, queue === 'true');
+        const report = await importService.importData(dataDir, data, queue === 'true');
         res.json(report);
     } catch (e) {
         next(e);

@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-02-17
+
+### Added
+
+- **Tests:** Full test remediation — 173 tests passing (backend: DevController, ImportService, PublisherService; frontend: useEntityMutation, useEditorActions, useEntitySelection, TableEditor, AppSidebar).
+- **Backend:** Extracted `ImportService` from `DataService` (365→210 lines).
+- **Safety:** Dirty state tracking fix — reverting changes now correctly clears "unsaved changes" warning.
+
+### Fixed
+
+- **CI:** Fixed workflow branch mismatch (`main` → `master`).
+- **Lint:** ESLint config now covers co-located `src/**/*.test.tsx` files.
+- **UX:** Skip Diff toggle for faster patch queuing.
+- **UX:** Entity duplication flow — fixed blank page, auto-category switch, identity field clearing.
+- **Windows:** `devController.ts` uses `tsx.cmd` + `shell: true` for Windows compatibility.
+
+### Changed
+
+- **Audit Trail:** All save paths now write to `patches.json`. Removed Quick Save (3rd button).
+- **Toolbar:** Simplified to Save + Queue only.
+- **Refactoring:** `useEditorForm` deep comparison for dirty state detection.
+
 ## [1.0.2] - 2026-02-17
 
 ### Fixed

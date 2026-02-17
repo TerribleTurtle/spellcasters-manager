@@ -1,6 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { dataService } from '../../server/services/dataService'; // Lowercase instance export
+import { importService } from '../../server/services/importService';
 import { fileService } from '../../server/services/fileService';
 import { backupService } from '../../server/services/backupService';
 import { patchService } from '../../server/services/patchService';
@@ -8,6 +9,10 @@ import { getSchemaForCategory } from '../../src/config/entityRegistry';
 
 // Mock dependencies
 vi.mock('../../server/services/fileService');
+vi.mock('../../server/services/importService', async (importOriginal) => {
+    const mod = await importOriginal<typeof import('../../server/services/importService')>();
+    return { importService: mod.importService };
+});
 vi.mock('../../server/services/backupService', () => ({
     backupService: {
         createBackup: vi.fn().mockResolvedValue('backup_path')
@@ -79,13 +84,13 @@ describe('Server DataService', () => {
         };
 
         it('creates a safety backup before importing', async () => {
-            await dataService.importData(dataDir, mockImportData);
+            await importService.importData(dataDir, mockImportData);
             
             expect(backupService.createBackup).toHaveBeenCalledWith(dataDir);
         });
 
         it('writes directly to file by default (queue=false)', async () => {
-             await dataService.importData(dataDir, mockImportData);
+             await importService.importData(dataDir, mockImportData);
              
              expect(fileService.writeJson).toHaveBeenCalledWith(
                  expect.stringContaining('units'),
@@ -95,7 +100,7 @@ describe('Server DataService', () => {
         });
 
         it('enqueues changes in queue mode (queue=true)', async () => {
-             await dataService.importData(dataDir, mockImportData, true);
+             await importService.importData(dataDir, mockImportData, true);
              
              expect(patchService.enqueueEntityChange).toHaveBeenCalledWith(
                  dataDir,
@@ -117,7 +122,7 @@ describe('Server DataService', () => {
             }
             vi.mocked(getSchemaForCategory).mockReturnValue(mockSchema as any);
 
-            const result = await dataService.importData(dataDir, invalidData);
+            const result = await importService.importData(dataDir, invalidData);
             
             expect(result.errors.length).toBeGreaterThan(0);
             expect(fileService.writeJson).not.toHaveBeenCalled();

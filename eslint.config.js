@@ -29,7 +29,7 @@ export default defineConfig([
   },
   // Tests: relax any/ts-comment rules (mocking requires flexible types)
   {
-    files: ['tests/**/*.{ts,tsx}'],
+    files: ['tests/**/*.{ts,tsx}', 'src/**/*.test.{ts,tsx}'],
     languageOptions: {
       globals: globals.node,
     },

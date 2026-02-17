@@ -76,7 +76,11 @@ export function useEditorActions<T extends Record<string, unknown>>({
      * Save — writes file to disk + records in audit log (patches.json).
      * Does NOT create a git commit.
      */
-    const handleSave = (data: Partial<T>, filenameOverride?: string) => {
+    /**
+     * Save — writes file to disk + records in audit log (patches.json).
+     * Does NOT create a git commit.
+     */
+    const handleSave = (data: Partial<T>, filenameOverride?: string, skipPreview: boolean = false) => {
         requestSave('silent', data, async (payload) => {
             try {
                  
@@ -84,13 +88,13 @@ export function useEditorActions<T extends Record<string, unknown>>({
             } catch (err) {
                 handleSaveError(err, "Error saving");
             }
-        });
+        }, skipPreview);
     };
 
     /**
      * Queue — writes file + adds to the patch queue for batch release later.
      */
-    const handleAddToQueue = (data: Partial<T>, filenameOverride?: string) => {
+    const handleAddToQueue = (data: Partial<T>, filenameOverride?: string, skipPreview: boolean = false) => {
         requestSave('queue', data, async (payload) => {
             try {
                  
@@ -98,7 +102,7 @@ export function useEditorActions<T extends Record<string, unknown>>({
             } catch (err) {
                 handleSaveError(err, "Error adding to queue");
             }
-        });
+        }, skipPreview);
     };
     
     const handleDelete = async (onSuccess?: () => void) => {
