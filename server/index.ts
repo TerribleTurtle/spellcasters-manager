@@ -30,7 +30,9 @@ const PORT = 3001;
 // --- Config ---
 // Single DATA_DIR — change the path in .env and restart. No modes.
 const DATA_DIR = process.env.DATA_DIR || path.resolve(__dirname, '../../spellcasters-community-api/data');
-const ASSETS_DIR = path.join(DATA_DIR, 'assets'); // Default upload location
+
+// Assets are always a sibling to the data directory (both in live and mock envs)
+const ASSETS_DIR = path.resolve(DATA_DIR, '../assets');
 
 // --- Middleware ---
 app.use(cors());
@@ -48,7 +50,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Context Middleware (Dependency Injection-lite)
 app.use((req: Request, res: Response, next: NextFunction) => {
-    req.context = { dataDir: DATA_DIR };
+    req.context = { dataDir: DATA_DIR, assetsDir: ASSETS_DIR };
     next();
 });
 
@@ -107,7 +109,7 @@ app.get('/api/assets/list', AssetController.listAssets);
 app.post('/api/assets/upload', upload.single('file'), AssetController.uploadAsset);
 
 // Static Assets
-app.use('/api/assets', express.static(DATA_DIR + '/assets'));
+app.use('/api/assets', express.static(ASSETS_DIR));
 
 // Dev Tools
 app.get('/api/dev/config', DevController.getConfig);

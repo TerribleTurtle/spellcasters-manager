@@ -124,4 +124,85 @@ describe('QueueService', () => {
             expect(queue).toHaveLength(1);
         });
     });
+
+    describe('Revert on Remove', () => {
+        it('removeFromQueue reverts entity data on disk', async () => {
+            const oldData = { name: 'Original', hp: 100 };
+            const mockQueue: any[] = [
+                { target_id: 'unit1.json', field: 'entity', old: oldData, new: { name: 'Modified', hp: 200 }, category: 'units' }
+            ];
+            mockedFileService.exists.mockResolvedValue(true);
+            mockedFileService.readJson.mockResolvedValue([...mockQueue]);
+            mockedFileService.writeJson.mockResolvedValue(undefined);
+
+            await queueService.removeFromQueue(dataDir, 0);
+
+            // First writeJson call should be the revert (writing old data to entity file)
+            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
+                expect.stringContaining('units'),
+                oldData
+            );
+        });
+
+        it('removeByTargetId reverts entity data on disk', async () => {
+            const oldData = { name: 'Original', hp: 100 };
+            const mockQueue: any[] = [
+                { target_id: 'unit1.json', field: 'entity', old: oldData, new: { name: 'Modified', hp: 200 }, category: 'units' },
+                { target_id: 'unit2.json', field: 'entity', old: { name: 'Other' }, new: { name: 'Other2' }, category: 'units' }
+            ];
+            mockedFileService.exists.mockResolvedValue(true);
+            mockedFileService.readJson.mockResolvedValue([...mockQueue]);
+            mockedFileService.writeJson.mockResolvedValue(undefined);
+
+            await queueService.removeByTargetId(dataDir, 'unit1.json');
+
+            // Should write old data to the entity file
+            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
+                expect.stringContaining('unit1.json'),
+                oldData
+            );
+        });
+
+        it('bulkRemoveFromQueue reverts all removed entities on disk', async () => {
+            const oldData1 = { name: 'Original1' };
+            const oldData2 = { name: 'Original2' };
+            const mockQueue: any[] = [
+                { target_id: 'u1.json', field: 'entity', old: oldData1, new: { name: 'New1' }, category: 'units' },
+                { target_id: 'u2.json', field: 'entity', old: oldData2, new: { name: 'New2' }, category: 'units' },
+                { target_id: 'u3.json', field: 'entity', old: { name: 'Keep' }, new: { name: 'Keep2' }, category: 'units' }
+            ];
+            mockedFileService.exists.mockResolvedValue(true);
+            mockedFileService.readJson.mockResolvedValue([...mockQueue]);
+            mockedFileService.writeJson.mockResolvedValue(undefined);
+
+            await queueService.bulkRemoveFromQueue(dataDir, [0, 1]);
+
+            // Should revert both removed entities
+            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
+                expect.stringContaining('u1.json'),
+                oldData1
+            );
+            expect(mockedFileService.writeJson).toHaveBeenCalledWith(
+                expect.stringContaining('u2.json'),
+                oldData2
+            );
+        });
+
+        it('removeFromQueue deletes file if old is undefined (creation revert)', async () => {
+            const mockQueue: any[] = [
+                { target_id: 'new_unit.json', field: 'entity', old: undefined, new: { name: 'Created' }, category: 'units' }
+            ];
+            mockedFileService.exists.mockResolvedValue(true);
+            mockedFileService.readJson.mockResolvedValue([...mockQueue]);
+            mockedFileService.writeJson.mockResolvedValue(undefined);
+            mockedFileService.deleteFile.mockResolvedValue(undefined);
+
+            await queueService.removeFromQueue(dataDir, 0);
+
+            // Should delete the file since old was undefined
+            expect(mockedFileService.deleteFile).toHaveBeenCalledWith(
+                expect.stringContaining('new_unit.json')
+            );
+        });
+    });
 });

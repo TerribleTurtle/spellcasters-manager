@@ -7,8 +7,7 @@ import { NextFunction } from 'express';
 
 // Note: Multer middleware must run BEFORE this controller to populate req.file
 export const uploadAsset = (req: Request, res: Response, next: NextFunction) => {
-    const { dataDir } = req.context;
-    const assetsDir = path.join(dataDir, 'assets');
+    const { assetsDir } = req.context;
 
     if (!fs.existsSync(assetsDir)) {
         fs.mkdirSync(assetsDir, { recursive: true });
@@ -46,8 +45,7 @@ export const uploadAsset = (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const listAssets = (req: Request, res: Response) => {
-    const { dataDir } = req.context;
-    const assetsDir = path.join(dataDir, 'assets');
+    const { assetsDir } = req.context;
     
     // Support common image formats
     const extensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];

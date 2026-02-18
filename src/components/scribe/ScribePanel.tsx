@@ -37,13 +37,15 @@ interface ScribePanelProps {
   refreshTrigger?: number;
   onOpenInEditor?: (change: Change) => void;
   onQueueChange?: () => void;
+  onDataReverted?: () => void;
 }
 
-export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange }: ScribePanelProps) {
+export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange, onDataReverted }: ScribePanelProps) {
   const [changes, setChanges] = useState<Change[]>([]);
+  const [existingVersions, setExistingVersions] = useState<Set<string>>(new Set());
 
   const [activeTab, setActiveTab] = useState<'draft' | 'history'>('draft');
-  const [title, setTitle] = useState("Balance Update");
+  const [title, setTitle] = useState("");
   const [version, setVersion] = useState("1.0.1");
   const [type, setType] = useState<PatchType>("Patch");
   const [tags, setTags] = useState("");
@@ -67,6 +69,61 @@ export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange 
           setSelectedIndices(new Set());
       });
   }, [onQueueChange]);
+
+  // Fetch unique existing versions for conflict checking
+  useEffect(() => {
+    patchService.getHistory({ flat: false }).then((patches) => {
+        if(Array.isArray(patches)) {
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           const versions = new Set(patches.map((p: any) => p.version));
+           setExistingVersions(versions);
+           
+           // Initialize default version based on type
+           if (type === 'Hotfix' && patches.length > 0) {
+              const latest = patches[0].version; // History is desc
+              const parts = latest.split('.');
+              // Try to increment last segment
+              const lastNum = parseInt(parts[parts.length - 1]);
+              if (!isNaN(lastNum)) {
+                 parts[parts.length - 1] = (lastNum + 1).toString();
+                 setVersion(parts.join('.'));
+              }
+           } else if (type !== 'Hotfix') {
+               setVersion(""); // Clear for non-hotfix
+           }
+        }
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Effect to handle type changes
+  useEffect(() => {
+      if (type === 'Hotfix') {
+          // Re-calculate increment logic if switching TO Hotfix
+          patchService.getHistory({ flat: false }).then((patches) => {
+            if (patches.length > 0) {
+                const latest = patches[0].version;
+                const parts = latest.split('.');
+                const lastNum = parseInt(parts[parts.length - 1]);
+                if (!isNaN(lastNum)) {
+                    parts[parts.length - 1] = (lastNum + 1).toString();
+                    setVersion(parts.join('.'));
+                }
+            } else {
+                setVersion("1.0.1"); // Default fallback
+            }
+          });
+      } else {
+          setVersion(""); // Clear for manual entry
+      }
+  }, [type]);
+
+  // Sync title with version for Hotfix
+  useEffect(() => {
+      if (type === 'Hotfix') {
+          setTitle(`Hotfix ${version}`);
+      }
+  }, [type, version]);
 
   const toggleSelection = (index: number) => {
       const next = new Set(selectedIndices);
@@ -97,6 +154,7 @@ export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange 
           await patchService.bulkRemoveFromQueue(indices);
           success(`Removed ${indices.length} items`);
           fetchQueue(); // Reloads and clears selection
+          onDataReverted?.(); // Refresh entity data (reverted on disk)
       } catch {
           error("Failed to remove items");
       } finally {
@@ -129,17 +187,14 @@ export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange 
       if (data.success) {
         success("Patch Published Successfully!");
         setChanges([]);
-        // Reset defaults
-        setTitle("Balance Update");
-        setTags("");
-        setVersion(v => {
-            const parts = v.split('.');
-            if(parts.length === 3) {
-                return `${parts[0]}.${parts[1]}.${parseInt(parts[2]) + 1}`;
-            }
-            return v;
-        });
         setDialogOpen(false);
+        // Refresh history to include the new one
+        const newVersions = new Set(existingVersions);
+        newVersions.add(version);
+        setExistingVersions(newVersions);
+        
+        // Refresh global state
+        fetchQueue();
       } else {
         error("Error publishing patch");
       }
@@ -214,7 +269,7 @@ export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange 
                         <DiffCard 
                            change={change} 
                            index={idx}
-                           onUpdate={fetchQueue} 
+                           onUpdate={() => { fetchQueue(); onDataReverted?.(); }} 
                            onOpenInEditor={onOpenInEditor} 
                            isSelected={selectedIndices.has(idx)}
                            onSelect={() => toggleSelection(idx)}
@@ -281,8 +336,10 @@ export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange 
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">Title</Label>
                         <Input 
+ 
                             value={title} 
                             onChange={e => setTitle(e.target.value)} 
+                            placeholder={type === 'Hotfix' ? 'e.g. Fix for crash in Level 5' : 'e.g. Winter Balance Update'}
                             className="col-span-3" 
                         />
                     </div>
@@ -297,15 +354,38 @@ export function ScribePanel({ refreshTrigger = 0, onOpenInEditor, onQueueChange 
                     </div>
                 </div>
 
+
+
+                {existingVersions.has(version) && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/50 rounded p-3 mb-4 flex items-start gap-2">
+                         <span className="text-yellow-500 text-lg">⚠️</span>
+                         <div className="text-xs text-yellow-500">
+                             <strong>Version Conflict:</strong> A patch with version <code>{version}</code> already exists.
+                             <br />
+                             Proceeding will <strong>merge</strong> these changes into the existing patch.
+                         </div>
+                    </div>
+                )}
+
+                {/* Warning for empty version on Patch/Content */}
+                {type !== 'Hotfix' && !version.trim() && (
+                    <div className="bg-blue-500/10 border border-blue-500/50 rounded p-3 mb-4 flex items-start gap-2">
+                         <span className="text-blue-500 text-lg">ℹ️</span>
+                         <div className="text-xs text-blue-500">
+                             <strong>Manual Version Required:</strong> For {type} updates, please enter the version number manually (e.g. matching the live game release).
+                         </div>
+                    </div>
+                )}
+
                 <DialogFooter>
-                    <Button onClick={handlePublish} disabled={loading}>
+                    <Button onClick={handlePublish} disabled={loading || !version.trim() || !title.trim()}>
                 {loading ? (
                     <>
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
                         Publishing...
                     </>
                 ) : (
-                    'Publish Patch'
+                    existingVersions.has(version) ? 'Merge & Update' : 'Publish Patch'
                 )}
             </Button>
                 </DialogFooter>

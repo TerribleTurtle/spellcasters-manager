@@ -12,8 +12,8 @@
   "abilities": {
     "passive": [
       {
-        "name": "Mountain\u2019s Favor",
-        "description": "The Stone Shaman\u2019s attacks deal double damage to buildings."
+        "name": "Mountain’s Favor",
+        "description": "The Stone Shaman’s attacks deal double damage to buildings."
       },
       {
         "name": "Child of the Titans",
@@ -43,7 +43,7 @@
             "radius": 8,
             "value": 7,
             "effect": "Heal",
-            "interval": 1.0,
+            "interval": 1,
             "target_types": [
               "Ally"
             ]
@@ -63,13 +63,6 @@
       "health": 15000
     }
   },
-  "changelog": [
-    {
-      "version": "0.0.1",
-      "date": "2026-02-05T18:35:34.217480Z",
-      "description": "Initial Closed Beta 2 Data"
-    }
-  ],
   "entity_id": "stone_shaman",
   "description": "An Enchanter who channels the power of earth to deal heavy damage, interrupt spellcasters, and fortify buildings."
 }

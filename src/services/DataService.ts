@@ -1,6 +1,7 @@
 import { httpClient } from "@/lib/httpClient";
 import { z } from "zod";
 import { stripInternalFields } from "@/domain/utils";
+import { safeArray } from "@/lib/guards";
 import { HttpError } from "@/lib/httpClient";
 
 export interface FieldError {
@@ -32,13 +33,15 @@ export class DataService {
     }
     
     // API V2 Endpoint structure: /api/list/:category
-    const data = await httpClient.request<string[]>(`/api/list/${category}`);
-    this.cache.set(cacheKey, data);
-    return data;
+    const data = await httpClient.request<unknown>(`/api/list/${category}`);
+    const validated = safeArray<string>(data);
+    this.cache.set(cacheKey, validated);
+    return validated;
   }
 
   async getBulk<T>(category: string): Promise<T[]> {
-      return httpClient.request<T[]>(`/api/bulk/${category}`);
+      const data = await httpClient.request<unknown>(`/api/bulk/${category}`);
+      return safeArray<T>(data);
   }
 
   async getById<T>(category: string, filename: string, schema?: z.ZodType<T>): Promise<T> {

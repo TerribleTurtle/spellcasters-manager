@@ -1,15 +1,42 @@
 import { diff, Diff } from 'deep-diff';
 import { cn } from "@/lib/utils";
 import { stripInternalFields } from "@/domain/utils";
+import { normalizeForDiff } from "@/domain/diff-utils";
 import { ArrowRight, Plus, Minus, Edit2 } from "lucide-react";
 
 interface JsonDiffProps {
-  oldData: unknown;
-  newData: unknown;
+  oldData?: unknown;
+  newData?: unknown;
+  /** Pre-computed diffs from slim patches (same shape as deep-diff output) */
+  diffs?: Diff<unknown, unknown>[];
   className?: string;
 }
 
-export function JsonDiff({ oldData, newData, className }: JsonDiffProps) {
+export function JsonDiff({ oldData, newData, diffs: preComputedDiffs, className }: JsonDiffProps) {
+  // If pre-computed diffs are provided (slim patches), use them directly
+  if (preComputedDiffs && preComputedDiffs.length > 0) {
+      return (
+          <div className={cn("space-y-1 font-mono text-xs", className)}>
+              {preComputedDiffs.map((change, idx) => (
+                  <div key={idx} className="flex items-start gap-2 bg-muted/30 p-1.5 rounded-sm border border-border/20">
+                      <ChangeIcon kind={change.kind} />
+                      <div className="flex-1 min-w-0 overflow-x-auto">
+                          <span className="text-muted-foreground font-semibold mr-1">
+                              {change.path ? change.path.join('.') : 'root'}:
+                          </span>
+                          <ChangeValue change={change} />
+                      </div>
+                  </div>
+              ))}
+          </div>
+      );
+  }
+
+  // If no old/new data available and no diffs, nothing to show
+  if (oldData === undefined && newData === undefined) {
+      return <div className="text-xs text-muted-foreground italic">No diff data available</div>;
+  }
+
   // If primitives/simple types, just show direct comparison
   if (typeof oldData !== 'object' || oldData === null || typeof newData !== 'object' || newData === null) {
       return (
@@ -21,9 +48,13 @@ export function JsonDiff({ oldData, newData, className }: JsonDiffProps) {
       );
   }
 
+  // Normalize data for diffing (e.g. legacy abilities -> array)
+  const normOld = normalizeForDiff(oldData);
+  const normNew = normalizeForDiff(newData);
+
   // Filter out internal props (starting with _)
-  const cleanOld = stripInternalFields(oldData);
-  const cleanNew = stripInternalFields(newData);
+  const cleanOld = stripInternalFields(normOld);
+  const cleanNew = stripInternalFields(normNew);
 
   // Calculate deep diff
   const changes = diff(cleanOld, cleanNew);
@@ -65,7 +96,6 @@ function ChangeIcon({ kind }: { kind: string }) {
 const SYSTEM_FIELDS = [
     'last_modified', 
     '$schema', 
-    'changelog', 
     'image_required', 
     'stack_size', 
     'entity_id'
@@ -120,6 +150,12 @@ function ChangeValue({ change }: { change: Diff<unknown, unknown> }) {
                         <span className="text-orange-500 text-mini uppercase font-bold tracking-wider">Array [{change.index}]</span>
                         <CategoryBadge category={category} />
                      </div>
+                    {/* Show inner item's path (e.g. 'cooldown') if present */}
+                    {change.item.path && change.item.path.length > 0 && (
+                        <span className="text-muted-foreground font-semibold mr-1">
+                            {change.item.path.join('.')}:
+                        </span>
+                    )}
                     <ChangeValue change={change.item} />
                 </div>
             );

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEditorActions } from "@/hooks/useEditorActions";
@@ -19,6 +19,7 @@ interface UseEditorFormReturn<T> {
   // Pre-bound handlers that account for isNew / generatedFilename
   handleSaveAction: (data: T) => void;
   handleQueueAction: (data: T) => void;
+  handleQuickQueueAction: (data: T) => void;
   handleReset: () => void;
 }
 
@@ -36,14 +37,18 @@ export function useEditorForm<T extends { id?: string }>({
   const [newEntityId] = useState(() => (isNew ? crypto.randomUUID() : ""));
 
   // Normalize data BEFORE creating the form
-  const { normalizedInitial, baseData, displayIcon } = useMemo(() => {
+  // rawInitialData = pre-normalization snapshot (preserves original file layout on disk)
+  const { normalizedInitial, baseData, rawInitialData, displayIcon } = useMemo(() => {
     if (!initialData)
-      return { normalizedInitial: null, baseData: null, displayIcon: "" };
+      return { normalizedInitial: null, baseData: null, rawInitialData: null, displayIcon: "" };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let base = { ...initialData } as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let current = { ...initialData } as any;
+
+    // Capture raw state BEFORE normalization (deep clone to freeze it)
+    const rawSnapshot = JSON.parse(JSON.stringify(base));
 
     if (restoredChange) {
       if (restoredChange.old) base = { ...base, ...restoredChange.old };
@@ -63,6 +68,7 @@ export function useEditorForm<T extends { id?: string }>({
     return {
       normalizedInitial: current as T,
       baseData: base as T,
+      rawInitialData: rawSnapshot as T,
       displayIcon: icon,
     };
   }, [initialData, filename, restoredChange, config]);
@@ -78,29 +84,44 @@ export function useEditorForm<T extends { id?: string }>({
   });
 
   // Re-sync form when initialData changes
+  const { reset } = form;
   useEffect(() => {
     if (normalizedInitial) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      form.reset(normalizedInitial as any);
+      reset(normalizedInitial as any);
     }
-  }, [normalizedInitial, form]);
+  }, [normalizedInitial, reset]);
 
-  // Report dirty state to parent via deep comparison
-  // RHF's isDirty uses strict equality (===), which gives false positives
-  // for objects/arrays that were re-created with different references.
-  const currentValues = form.watch();
+  // Debounced dirty check to avoid blocking the render loop on every keystroke
+  // We use form.watch with a callback (subscription) instead of a hook (re-render)
+  const dirtyTimer = useRef<NodeJS.Timeout>();
   
   useEffect(() => {
-    const defaults = form.formState.defaultValues;
-    const isActuallyDirty = JSON.stringify(currentValues) !== JSON.stringify(defaults);
-    onDirtyChange?.(isActuallyDirty);
-  }, [currentValues, onDirtyChange, form.formState.defaultValues]);
+    // Subscribe to all changes
+    const subscription = form.watch(() => {
+      if (dirtyTimer.current) {
+        clearTimeout(dirtyTimer.current);
+      }
+      
+      dirtyTimer.current = setTimeout(() => {
+        const current = form.getValues();
+        const defaults = form.formState.defaultValues;
+        
+        // Deep compare
+        const isActuallyDirty = JSON.stringify(current) !== JSON.stringify(defaults);
+        onDirtyChange?.(isActuallyDirty);
+      }, 300);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form, onDirtyChange]);
 
   // Editor actions (save, queue, delete, diff preview)
   const editorActions = useEditorActions({
     category: config.category,
     filename,
     initialData: baseData || initialData,
+    rawInitialData: rawInitialData || undefined,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSave: (data?: any, savedFilename?: string) => {
       if (data) {
@@ -139,6 +160,12 @@ export function useEditorForm<T extends { id?: string }>({
     editorActions.handleAddToQueue(data, isNew ? generatedFilename : undefined, (config as any).skipDiff);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleQuickQueueAction = (data: any) => {
+    // Force skipPreview = true
+    editorActions.handleAddToQueue(data, isNew ? generatedFilename : undefined, true);
+  };
+
   const handleReset = () => {
     if (form.formState.isDirty) {
       form.reset();
@@ -160,6 +187,7 @@ export function useEditorForm<T extends { id?: string }>({
     editorActions,
     handleSaveAction,
     handleQueueAction,
+    handleQuickQueueAction,
     handleReset,
   };
 }

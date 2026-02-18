@@ -58,11 +58,14 @@ describe('useEditorForm Dirty State', () => {
             onDirtyChange
         }));
 
-        expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+        // The debounced dirty check fires only on form.watch() changes,
+        // so onDirtyChange should NOT have been called on mount (no change occurred).
+        expect(onDirtyChange).not.toHaveBeenCalled();
     });
 
     it('should be dirty when primitive value changes', async () => {
         const onDirtyChange = vi.fn();
+        vi.useFakeTimers();
         
         const { result } = renderHook(() => useEditorForm({
             config: defaultConfig as any,
@@ -75,12 +78,18 @@ describe('useEditorForm Dirty State', () => {
             result.current.form.setValue('name', 'Changed Name');
         });
 
-        // RHF updates are async-ish in hooks sometimes, but usually sync with act
+        // Fast-forward debounce timer
+        act(() => {
+            vi.advanceTimersByTime(300);
+        });
+
         expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+        vi.useRealTimers();
     });
 
     it('should be clean when primitive value reverted', async () => {
         const onDirtyChange = vi.fn();
+        vi.useFakeTimers();
         
         const { result } = renderHook(() => useEditorForm({
             config: defaultConfig as any,
@@ -89,19 +98,25 @@ describe('useEditorForm Dirty State', () => {
             onDirtyChange
         }));
 
+        // Change
         act(() => {
             result.current.form.setValue('name', 'Changed Name');
+            vi.advanceTimersByTime(300);
         });
         expect(onDirtyChange).toHaveBeenLastCalledWith(true);
 
+        // Revert
         act(() => {
             result.current.form.setValue('name', 'Test Unit');
+            vi.advanceTimersByTime(300);
         });
         expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+        vi.useRealTimers();
     });
 
     it('should be clean when complex object reverted (Deep Equality Fix)', async () => {
         const onDirtyChange = vi.fn();
+        vi.useFakeTimers();
         
         const { result } = renderHook(() => useEditorForm({
             config: defaultConfig as any,
@@ -113,21 +128,23 @@ describe('useEditorForm Dirty State', () => {
         // 1. Change deep value
         act(() => {
             result.current.form.setValue('stats.health', 50);
+            vi.advanceTimersByTime(300);
         });
         expect(onDirtyChange).toHaveBeenLastCalledWith(true);
 
         // 2. Revert deep value (creates new object reference for `stats`)
         act(() => {
             result.current.form.setValue('stats', { health: 100 });
+            vi.advanceTimersByTime(300);
         });
         
-        // Strict equality would fail here because {health:100} !== initialData.stats
-        // But our fix uses JSON.stringify, so it should be false (clean)
         expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+        vi.useRealTimers();
     });
 
     it('should be clean when array reverted (Deep Equality Fix)', async () => {
         const onDirtyChange = vi.fn();
+        vi.useFakeTimers();
         
         const { result } = renderHook(() => useEditorForm({
             config: defaultConfig as any,
@@ -139,14 +156,17 @@ describe('useEditorForm Dirty State', () => {
         // 1. Change array
         act(() => {
             result.current.form.setValue('tags', ['a', 'b', 'c']);
+            vi.advanceTimersByTime(300);
         });
         expect(onDirtyChange).toHaveBeenLastCalledWith(true);
 
         // 2. Revert array (new reference)
         act(() => {
             result.current.form.setValue('tags', ['a', 'b']);
+            vi.advanceTimersByTime(300);
         });
 
         expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+        vi.useRealTimers();
     });
 });

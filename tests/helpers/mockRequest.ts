@@ -5,6 +5,7 @@ import { AppMode } from '../../src/types';
 export interface MockContext {
   mode: AppMode;
   dataDir: string;
+  assetsDir: string;
 }
 
 export type MockRequest = Request & {

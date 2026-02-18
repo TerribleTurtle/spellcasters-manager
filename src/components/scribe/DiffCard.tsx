@@ -1,6 +1,7 @@
 import { Plus, Trash2, Tag, Edit2, X, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Change, BalanceDirection } from "@/types";
+import { Change } from "@/types";
+import { safeArray } from "@/lib/guards";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,8 +29,9 @@ interface DiffCardProps {
 }
 
 export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, onSelect }: DiffCardProps) {
-    const isNew = change.old === undefined || change.old === null || change.old === "";
-    const isDelete = change.new === undefined || change.new === null || change.new === "";
+    // Slim patches use change_type; queue items use old/new presence
+    const isNew = change.change_type === 'add' || (change.change_type === undefined && (change.old === undefined || change.old === null || change.old === ""));
+    const isDelete = change.change_type === 'delete' || (change.change_type === undefined && (change.new === undefined || change.new === null || change.new === ""));
     
     const [isEditingTags, setIsEditingTags] = useState(false);
     const [tagInput, setTagInput] = useState("");
@@ -42,7 +44,7 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
         if (!tagInput.trim() || index === undefined) return;
         
         try {
-            const currentTags = change.tags || [];
+            const currentTags = safeArray<string>(change.tags);
             if (currentTags.includes(tagInput.trim())) {
                 setTagInput("");
                 return;
@@ -64,7 +66,7 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
         if (index === undefined) return;
 
         try {
-            const currentTags = change.tags || [];
+            const currentTags = safeArray<string>(change.tags);
             const newTags = currentTags.filter(t => t !== tagToRemove);
             const updatedChange = { ...change, tags: newTags };
 
@@ -120,25 +122,6 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
         }
     };
 
-    const handleBalanceChange = async (direction: BalanceDirection) => {
-        if (index === undefined) return;
-        try {
-            const updatedChange = { ...change, balance_direction: direction };
-            await patchService.updateQueueItem(index, updatedChange);
-            if (onUpdate) onUpdate();
-            success("Balance direction updated");
-        } catch {
-            error("Failed to update balance direction");
-        }
-    };
-
-    const balanceColors: Record<string, string> = {
-        buff: 'text-green-500 bg-green-500/10 border-green-500/30',
-        nerf: 'text-red-500 bg-red-500/10 border-red-500/30',
-        rework: 'text-blue-500 bg-blue-500/10 border-blue-500/30',
-        fix: 'text-muted-foreground bg-muted/50 border-border/50',
-        default: 'text-muted-foreground/50 border-transparent bg-transparent',
-    };
 
     return (
         <div className={cn(
@@ -194,14 +177,14 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
 
                     {/* Diff Row */}
                     <div className="flex flex-col gap-2 text-sm bg-background/50 p-2 rounded-md border border-border/30">
-                         <JsonDiff oldData={change.old} newData={change.new} />
+                         <JsonDiff oldData={change.old} newData={change.new} diffs={change.diffs} />
                     </div>
 
                     {/* Meta Controls */}
                     <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-border/30">
                          <div className="flex flex-wrap gap-1">
                              <Tag className="w-3 h-3 text-muted-foreground mt-1 mr-1" />
-                             {(change.tags || []).map(t => (
+                             {safeArray<string>(change.tags).map(t => (
                                  <div key={t} className="flex items-center gap-1 text-mini bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-medium border border-primary/20 group/tag">
                                      {t}
                                      {index !== undefined && (
@@ -218,24 +201,6 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
                              ))}
                          </div>
 
-                         {/* Balance Direction Selector */}
-                         {index !== undefined && (
-                                 <select
-                                     value={change.balance_direction || ''}
-                                     onChange={(e) => handleBalanceChange(e.target.value as BalanceDirection)}
-                                     className={cn(
-                                         "h-6 text-mini font-bold uppercase tracking-wider rounded-md border px-1.5 cursor-pointer appearance-none",
-                                         balanceColors[change.balance_direction || 'default']
-                                     )}
-                                     title="Balance Direction"
-                                 >
-                                     <option value="">—</option>
-                                     <option value="buff">▲ Buff</option>
-                                     <option value="nerf">▼ Nerf</option>
-                                     <option value="rework">↻ Rework</option>
-                                     <option value="fix">● Fix</option>
-                                 </select>
-                         )}
                          {index !== undefined && (
                              <div className="flex items-center gap-1 ml-auto">
                                  {isEditingTags ? (

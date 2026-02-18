@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.4] - 2026-02-18
+
+### Added
+
+- **Ordered JSON Output:** Deterministic key ordering for all entity and patch files (`$schema`→`id`→`name`→alpha→`last_modified`→`changelog`). `sortKeys` utility in `server/utils/jsonUtils.ts`.
+- **Publisher Commit Integration:** `publish()`/`publishIfNeeded()` return written file paths. All git commit flows now stage changelog/timeline files.
+- **Schema Alignment (Phase 11):** Editor fields/types now match community API schemas exactly. Removed phantom fields (`tier`, `cost`, `rarity`). Added conformance tests.
+- **SpellcastersDB Migration:** Paginated changelog API, removed balance_index/PatchType code, added `InspectorHistory`, `PatchHistorySection`, `useEntityHistory` hook.
+- **Data Pipeline Fixes:** Delete patches use slim diffs, batch saves pass real `oldData`, standard save reads disk once.
+- **Live Asset Path Fix:** `ASSETS_DIR` resolves dynamically for both mock and live folder structures.
+- **Mock Data Restructure:** Aligned mock environment with live repo structure (sibling `data`/`assets`).
+
+### Fixed
+
+- **Tests:** Fixed 8 pre-existing test failures (path errors, missing imports, schema drift, flaky Windows file locks). Deleted orphaned test. **43 files, 397 tests green.**
+- **Publisher:** Fixed double `.json.json` timeline extension bug.
+- **Lint:** Fixed 11 lint errors (eliminated `any` types, removed unused imports/vars) across 4 files. 0 errors baseline.
+- **Entity Changelog Trim:** Per-file `changelog` array capped at 5 entries to prevent unbounded growth.
+- **Slim Patch Normalization:** `buildSlimChange` normalizes legacy Object abilities → Array before diff.
+
+### Changed
+
+- **Slim Commit Pipeline:** `commitPatch` now slims queue changes (full→diffs) before writing to `patches.json`.
+- **Test Count:** 344→397 tests passing.
+
 ## [1.0.3] - 2026-02-17
 
 ### Added

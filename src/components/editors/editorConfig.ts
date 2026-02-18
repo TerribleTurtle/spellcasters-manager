@@ -1,9 +1,11 @@
 import { ZodObject } from "zod";
-import { SchemaFieldsConfig, UNIT_FIELD_CONFIG, HERO_FIELD_CONFIG, CONSUMABLE_FIELD_CONFIG } from "@/domain/schemaToFields";
-import { UnitSchema, HeroSchema, ConsumableSchema } from "@/domain/schemas";
+import { SchemaFieldsConfig, UNIT_FIELD_CONFIG, HERO_FIELD_CONFIG, CONSUMABLE_FIELD_CONFIG, SPELL_FIELD_CONFIG } from "@/domain/schemaToFields";
+import { UnitSchema, HeroSchema, ConsumableSchema, SpellSchema } from "@/domain/schemas";
 import { Control } from "react-hook-form";
 import { HeroAbilitiesPanel } from "./panels/HeroAbilitiesPanel";
-import { Change, Unit, Hero, Consumable } from "@/types";
+import { MechanicsPanel } from "./panels/MechanicsPanel";
+import { TagsPanel } from "./panels/TagsPanel";
+import { Change, Unit, Hero, Consumable, Spell } from "@/types";
 import { z } from "zod";
 
 export interface EditorProps {
@@ -29,7 +31,7 @@ export interface EntityEditorConfig<T> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   normalize?: (data: any) => T;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  extraPanels?: React.ComponentType<{ control: Control<any> }>[];
+  extraPanels?: React.ComponentType<{ control: Control<any>; initialData?: T }>[];
 }
 
 // --- Normalization Logic ---
@@ -88,6 +90,7 @@ export const UNIT_EDITOR_CONFIG: EntityEditorConfig<Unit> = {
      icon: "",
   },
   // No normalize needed for Unit
+  extraPanels: [MechanicsPanel, TagsPanel],
 };
 
 export const HERO_EDITOR_CONFIG: EntityEditorConfig<Hero> = {
@@ -99,18 +102,18 @@ export const HERO_EDITOR_CONFIG: EntityEditorConfig<Hero> = {
     name: "",
     icon: "",
     type: "Unit",
-    tier: 1,
+    // tier: removed
     description: "",
     health: 200,
     damage: 15,
     range: 1,
     movement_speed: 3,
     movement_type: "Ground",
-    cost: 5,
+    // cost: removed
     abilities: [],
   },
   normalize: normalizeHero,
-  extraPanels: [HeroAbilitiesPanel],
+  extraPanels: [HeroAbilitiesPanel, MechanicsPanel, TagsPanel],
 };
 
 export const CONSUMABLE_EDITOR_CONFIG: EntityEditorConfig<Consumable> = {
@@ -121,13 +124,37 @@ export const CONSUMABLE_EDITOR_CONFIG: EntityEditorConfig<Consumable> = {
   defaultValues: {
       name: "",
       effect_type: "Heal",
-      rarity: "Common",
+      // rarity: removed
       value: 0,
       duration: 0,
-      cooldown: 0,
+      // cooldown: removed
       stack_size: 1,
-      buff_target: "Self",
+      buff_target: "Health", // Valid enum value
       description: "",
   },
   // Consumable has trivial normalization (identity), can omit or add if strict
+  extraPanels: [MechanicsPanel],
+};
+
+export const SPELL_EDITOR_CONFIG: EntityEditorConfig<Spell> = {
+    schema: SpellSchema,
+    fieldConfig: SPELL_FIELD_CONFIG,
+    category: 'spells',
+    label: 'Spell',
+    defaultValues: {
+        name: "",
+        icon: "",
+        type: "Unit", // Technically spells don't have 'type' in schema but it might be used by system? Schema doesn't have it.
+        description: "",
+        damage: 0,
+        range: 0,
+        charges: 1,
+        recharge_time: 0,
+        // New spell defaults
+        radius: 0,
+        value: 0,
+        duration: 0,
+        cooldown: 0,
+    } as unknown as Spell, // Cast needed if type mismatch on legacy fields, but Spell matches Schema now.
+    extraPanels: [MechanicsPanel, TagsPanel],
 };

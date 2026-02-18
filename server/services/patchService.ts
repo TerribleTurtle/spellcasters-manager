@@ -9,6 +9,8 @@ import { logger } from '../utils/logger.js';
 import { auditLogger } from '../utils/auditLogger.js';
 import { AppError } from '../utils/AppError.js';
 import { ensureJsonExt } from '../utils/pathUtils.js';
+import { buildSlimChange } from '../utils/slimChange.js';
+import { sortKeys } from '../utils/jsonUtils.js';
 
 export class PatchService {
     private gitService: typeof gitService;
@@ -28,11 +30,14 @@ export class PatchService {
         // 1. Create the patch entry on disk
         const patchEntry = await this.recordPatch(dataDir, `Quick Save: ${change.name} (${change.field})`, 'Hotfix', [change], tags, version || 'quick');
 
-        // 2. Commit it
+        // 2. Publish static API files (changelog, timeline) if community-api
+        const publishedFiles = await publisherService.publishIfNeeded(dataDir);
+
+        // 3. Commit it
         const patchesFile = path.join(dataDir, 'patches.json');
         
         // Stage only the files we actually touched
-        const touchedFiles = [patchesFile];
+        const touchedFiles = [patchesFile, ...publishedFiles];
         // The entity file was already saved by saveData before quickSave was called
         if (change.category) {
             const entityFile = path.join(dataDir, change.category, 
@@ -94,7 +99,7 @@ export class PatchService {
             patches = await fileService.readJson<Patch[]>(patchesFile);
         }
         patches.unshift(patchEntry);
-        await fileService.writeJson(patchesFile, patches);
+        await fileService.writeJson(patchesFile, sortKeys(patches));
         
         return patchEntry;
     }
@@ -106,11 +111,31 @@ export class PatchService {
     async commitPatch(dataDir: string, title: string, version: string, type: PatchType, tags: string[] = []): Promise<Patch> {
         const patchesFile = path.join(dataDir, 'patches.json');
         const queueFile = path.join(dataDir, 'queue.json');
-        const finalChanges = await this.readQueueSafe(dataDir);
+        const fullChanges = await this.readQueueSafe(dataDir);
 
-        if (finalChanges.length === 0) {
+        if (fullChanges.length === 0) {
             throw AppError.badRequest("No queued changes to commit");
         }
+
+        // Backup Queue FIRST (preserves full old/new snapshots for disaster recovery)
+        await backupService.backupQueue(dataDir, fullChanges);
+
+        // Slim the queue changes: convert full old/new snapshots → compact diffs
+        // The queue backup above retains the full data; patches.json only needs diffs.
+        const finalChanges: Change[] = fullChanges.map(change => {
+            if (change.old !== undefined || change.new !== undefined) {
+                return buildSlimChange(
+                    change.target_id,
+                    change.name,
+                    change.field,
+                    change.category || '',
+                    change.old,
+                    change.new
+                );
+            }
+            // Already slim (shouldn't happen, but safe)
+            return change;
+        });
 
         let patches: Patch[] = [];
         if (await fileService.exists(patchesFile)) {
@@ -149,25 +174,14 @@ export class PatchService {
             patches.unshift(patchEntry);
         }
 
-
-        // Backup Queue using BackupService
-        await backupService.backupQueue(dataDir, finalChanges);
-
         try {
-            await fileService.writeJson(patchesFile, patches);
-            await fileService.writeJson(queueFile, []);
+            await fileService.writeJson(patchesFile, sortKeys(patches));
+            await fileService.writeJson(queueFile, sortKeys([]));
 
-            if (dataDir.includes('spellcasters-community-api')) {
-                try {
-                    const apiRoot = path.resolve(dataDir, '..');
-                    await publisherService.publish(apiRoot, patches);
-                } catch (err) {
-                    logger.error("Static File Gen Error:", { error: err });
-                }
-            }
+            const publishedFiles = await publisherService.publishIfNeeded(dataDir);
 
             // Stage only the files we actually touched
-            const touchedFiles = [patchesFile, queueFile];
+            const touchedFiles = [patchesFile, queueFile, ...publishedFiles];
             // Entity files were already saved by saveData calls before commit
             for (const change of finalChanges) {
                 if (change.category) {
@@ -182,7 +196,7 @@ export class PatchService {
             if (diff) patchEntry.diff = diff;
 
             // Re-write patches with diff included
-            await fileService.writeJson(patchesFile, patches);
+            await fileService.writeJson(patchesFile, sortKeys(patches));
 
             const commitMsg = existingIdx >= 0 
                 ? `[UPDATE] ${title} (${version})`
@@ -218,6 +232,8 @@ export class PatchService {
     /**
      * Creates a new patch that inverts the changes of a target patch.
      * Effectively "undoes" a patch while preserving history.
+     * 
+     * Supports both slim diffs (new format) and legacy old/new snapshots.
      */
     async rollbackPatch(dataDir: string, id: string): Promise<Patch> {
         const patchesFile = path.join(dataDir, 'patches.json');
@@ -229,65 +245,102 @@ export class PatchService {
 
         const originalPatch = patches[patchIdx];
         const invertedChanges: Change[] = [];
-        const fileUpdates: Record<string, Change[]> = {};
-
-        for (const change of originalPatch.changes) {
-            const inverted: Change = {
-                ...change,
-                old: change.new,
-                new: change.old,
-                name: `Revert: ${change.name}`,
-                reason: `Rollback of ${originalPatch.title}`
-            };
-            invertedChanges.push(inverted);
-            if (!fileUpdates[change.target_id]) fileUpdates[change.target_id] = [];
-            fileUpdates[change.target_id].push(inverted);
-        }
-
-        // Apply to Disk
         const categories = await fileService.listDirectories(dataDir, ['queue_backups']);
 
-        for (const [targetId, changes] of Object.entries(fileUpdates)) {
+        for (const change of originalPatch.changes) {
+            // Resolve file path for this entity
             let filePath: string | null = null;
-            
             for (const cat of categories) {
-                const p = path.join(dataDir, cat, ensureJsonExt(targetId));
+                const p = path.join(dataDir, cat, ensureJsonExt(change.target_id));
                 if (await fileService.exists(p)) {
                     filePath = p;
                     break;
                 }
             }
-
-            if (!filePath) {
-                 const cat = changes.find(c => c.category)?.category;
-                 if (cat) filePath = path.join(dataDir, cat, ensureJsonExt(targetId));
+            if (!filePath && change.category) {
+                filePath = path.join(dataDir, change.category, ensureJsonExt(change.target_id));
             }
-
             if (!filePath) {
-                logger.warn(`Could not find file for ${targetId}, skipping rollback for this file.`);
+                logger.warn(`Could not find file for ${change.target_id}, skipping rollback.`);
                 continue;
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            let content: any = {};
-            if (await fileService.exists(filePath)) content = await fileService.readJson(filePath);
-
-            for (const change of changes) {
-                if (change.new === undefined && (change.field === 'ROOT' || !change.field)) {
-                    await fileService.deleteFile(filePath);
-                    content = null;
-                    break;
-                } else if (change.old === undefined && (change.field === 'ROOT' || !change.field)) {
-                    content = change.new;
+            // --- Slim diff rollback (new format) ---
+            // Detect slim patch by change_type (always present) OR diffs array
+            if (change.change_type || (change.diffs && Array.isArray(change.diffs) && change.diffs.length > 0)) {
+                if (change.change_type === 'add') {
+                    // Entity was added → rollback = delete it
+                    if (await fileService.exists(filePath)) {
+                        await fileService.deleteFile(filePath);
+                    }
+                    invertedChanges.push({
+                        ...change,
+                        change_type: 'delete',
+                        diffs: (change.diffs || []).map(d => ({ ...d, lhs: d.rhs, rhs: d.lhs })),
+                        name: `Revert: ${change.name}`,
+                        reason: `Rollback of ${originalPatch.title}`
+                    });
+                } else if (change.change_type === 'delete') {
+                    // Entity was deleted → can't fully reconstruct from diffs alone
+                    // Log warning — user should restore from backup
+                    logger.warn(`Cannot fully rollback deletion of ${change.target_id} from diffs alone. Restore from backup.`);
+                    invertedChanges.push({
+                        ...change,
+                        change_type: 'add',
+                        diffs: (change.diffs || []).map(d => ({ ...d, lhs: d.rhs, rhs: d.lhs })),
+                        name: `Revert: ${change.name}`,
+                        reason: `Rollback of ${originalPatch.title} (manual restore may be needed)`
+                    });
                 } else {
-                    if (content) content = this.applyChangeToObject(content, change.field, change.new);
+                    // Edit → read current file, apply inverse diffs
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    let content: any = {};
+                    if (await fileService.exists(filePath)) {
+                        content = await fileService.readJson(filePath);
+                    }
+
+                    if (change.diffs) {
+                        for (const d of change.diffs) {
+                            if (!d.path || d.path.length === 0) continue;
+                            this.applyInverseDiff(content, d);
+                        }
+                    }
+
+                    await fileService.writeJson(filePath, sortKeys(content));
+                    invertedChanges.push({
+                        ...change,
+                        diffs: (change.diffs || []).map(d => ({ ...d, lhs: d.rhs, rhs: d.lhs })),
+                        name: `Revert: ${change.name}`,
+                        reason: `Rollback of ${originalPatch.title}`
+                    });
                 }
             }
+            // --- Legacy rollback (old/new format) ---
+            else if (change.old !== undefined || change.new !== undefined) {
+                const inverted: Change = {
+                    ...change,
+                    old: change.new,
+                    new: change.old,
+                    name: `Revert: ${change.name}`,
+                    reason: `Rollback of ${originalPatch.title}`
+                };
+                invertedChanges.push(inverted);
 
-            if (content) {
-                const dir = path.dirname(filePath);
-                await fileService.ensureDir(dir);
-                await fileService.writeJson(filePath, content);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                let content: any = {};
+                if (await fileService.exists(filePath)) content = await fileService.readJson(filePath);
+
+                if (inverted.new === undefined && (inverted.field === 'ROOT' || !inverted.field)) {
+                    await fileService.deleteFile(filePath);
+                } else if (inverted.old === undefined && (inverted.field === 'ROOT' || !inverted.field)) {
+                    content = inverted.new;
+                    await fileService.writeJson(filePath, content);
+                } else {
+                    if (content) content = this.applyChangeToObject(content, inverted.field, inverted.new);
+                    await fileService.writeJson(filePath, sortKeys(content));
+                }
+            } else {
+                logger.warn(`Change for ${change.target_id} has neither diffs nor old/new — skipping.`);
             }
         }
 
@@ -302,15 +355,17 @@ export class PatchService {
         };
 
         patches.unshift(revertPatch);
-        await fileService.writeJson(patchesFile, patches);
+        await fileService.writeJson(patchesFile, sortKeys(patches));
+
+        // Publish static API files (changelog, timeline) if community-api
+        const publishedFiles = await publisherService.publishIfNeeded(dataDir);
 
         // Stage only patchesFile + the entity files we actually reverted
-        const touchedFiles = [patchesFile];
-        for (const [targetId, changes] of Object.entries(fileUpdates)) {
-            const cat = changes.find(c => c.category)?.category;
+        const touchedFiles = [patchesFile, ...publishedFiles];
+        for (const change of originalPatch.changes) {
+            const cat = change.category;
             if (cat) {
-                touchedFiles.push(path.join(dataDir, cat, 
-                    ensureJsonExt(targetId)));
+                touchedFiles.push(path.join(dataDir, cat, ensureJsonExt(change.target_id)));
             }
         }
 
@@ -318,6 +373,59 @@ export class PatchService {
         auditLogger.logAction(dataDir, 'PATCH_ROLLBACK', { originalId: id, revertId: revertPatch.id });
         
         return revertPatch;
+    }
+
+    /**
+     * Applies the inverse of a single deep-diff entry to an object.
+     * Supports N (new→delete), D (deleted→restore), E (edit→revert), A (array).
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private applyInverseDiff(obj: any, d: any): void {
+        if (!d.path || d.path.length === 0) return;
+
+        // Navigate to parent
+        let current = obj;
+        for (let i = 0; i < d.path.length - 1; i++) {
+            const key = d.path[i];
+            if (current[key] === undefined || current[key] === null) {
+                current[key] = typeof d.path[i + 1] === 'number' ? [] : {};
+            }
+            current = current[key];
+        }
+
+        const lastKey = d.path[d.path.length - 1];
+
+        switch (d.kind) {
+            case 'E': // Edit → revert to old value
+                current[lastKey] = d.lhs;
+                break;
+            case 'N': // New field → delete it
+                delete current[lastKey];
+                break;
+            case 'D': // Deleted field → restore it
+                current[lastKey] = d.lhs;
+                break;
+            case 'A': // Array change → apply inverse recursively
+                if (d.item) {
+                    if (d.item.kind === 'N') {
+                        // Item was added → remove it
+                        if (Array.isArray(current[lastKey])) {
+                            current[lastKey].splice(d.index, 1);
+                        }
+                    } else if (d.item.kind === 'D') {
+                        // Item was deleted → add it back
+                        if (Array.isArray(current[lastKey])) {
+                            current[lastKey].splice(d.index, 0, d.item.lhs);
+                        }
+                    } else if (d.item.kind === 'E') {
+                        // Item was edited → revert
+                        if (Array.isArray(current[lastKey])) {
+                            current[lastKey][d.index] = d.item.lhs;
+                        }
+                    }
+                }
+                break;
+        }
     }
 
     private static readonly DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);

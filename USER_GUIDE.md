@@ -38,6 +38,11 @@
 1. Open the entity.
 2. Click the **Delete** button and confirm.
 
+### Mechanics (Creatures)
+
+- **Damage Modifiers**: Creatures can have special damage multipliers against specific target types (e.g. x2.0 vs Buildings).
+- Use the **Mechanics** panel in the editor to add these modifiers.
+
 ---
 
 ## 3. Patch Workflow

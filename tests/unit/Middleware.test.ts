@@ -78,18 +78,15 @@ describe('Middleware: validatePath', () => {
         expect(statusSpy).not.toHaveBeenCalled();
     });
 
-    it('handles payload injection attempts in path', () => {
+    it('allows triple-dot paths (not traversal)', () => {
+        // '...' is a valid directory name, not a traversal attack
         mockReq.params = { category: 'units', filename: '..././.../etc/passwd' };
         validatePath(mockReq, mockRes as Response, nextSpy);
-        // Should resolve to something outside or be caught
-        // path.resolve('/root/data/units', '..././.../etc/passwd') -> /root/data/units/.../etc/passwd
-        // Wait, '...' is valid directory name. 
-        // usage of '..' is the danger.
-        // If I use '..', path.resolve handles it.
-        
-        // Clear nextSpy for the second call in this test
-        nextSpy.mockClear();
+        // path.resolve('/root/data/units', '..././.../etc/passwd') -> stays inside root
+        expect(nextSpy).toHaveBeenCalled();
+    });
 
+    it('blocks backslash traversal in filename', () => {
         mockReq.params = { category: 'units', filename: '..\\..\\windows\\system32' };
         validatePath(mockReq, mockRes as Response, nextSpy);
         expect(nextSpy).toHaveBeenCalledWith(expect.any(AppError));

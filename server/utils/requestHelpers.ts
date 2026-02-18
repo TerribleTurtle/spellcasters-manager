@@ -33,7 +33,11 @@ export const validatePath = (req: Request, res: Response, next: NextFunction) =>
     const resolvedDataDir = path.resolve(dataDir);
     
     if (category) {
-        const dirPath = path.resolve(resolvedDataDir, category as string);
+        // Normalize backslashes to forward slashes for cross-platform safety
+        // This ensures Windows-style paths (..\..\) catch traversal even on Linux
+        const safeCategory = (category as string).replace(/\\/g, '/');
+        const dirPath = path.resolve(resolvedDataDir, safeCategory);
+        
         if (!dirPath.startsWith(resolvedDataDir)) {
             logger.warn(`[Security] Blocked directory traversal attempt: ${category}`);
             return next(AppError.forbidden('Forbidden'));
@@ -41,7 +45,9 @@ export const validatePath = (req: Request, res: Response, next: NextFunction) =>
         res.locals.resolvedDir = dirPath;
 
         if (filename) {
-            const filePath = path.resolve(dirPath, filename as string);
+            const safeFilename = (filename as string).replace(/\\/g, '/');
+            const filePath = path.resolve(dirPath, safeFilename);
+            
             if (!filePath.startsWith(dirPath)) {
                 logger.warn(`[Security] Blocked file traversal attempt: ${category}/${filename}`);
                 return next(AppError.forbidden('Forbidden'));

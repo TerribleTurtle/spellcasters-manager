@@ -1,12 +1,16 @@
-import path from 'path';
+﻿import path from 'path';
 import { fileService } from './fileService.js';
 import { patchService } from './patchService.js';
+import { publisherService } from './publisherService.js';
 import { backupService } from './backupService.js';
 import { logger } from '../utils/logger.js';
-import { validateAndParse, stripInternalFields } from '../utils/requestHelpers.js';
+import { validateAndParse } from '../utils/requestHelpers.js';
 import { Change } from '../../src/domain/schemas/index.js';
 import { getSchemaForCategory } from '../../src/config/entityRegistry.js';
 import { AppError } from '../utils/AppError.js';
+import { buildSlimChange } from '../utils/slimChange.js';
+import { denormalizeAbilities } from '../../src/domain/diff-utils.js';
+import { sortKeys } from '../utils/jsonUtils.js';
 
 export class DataService {
 
@@ -53,6 +57,16 @@ export class DataService {
          const schema = getSchemaForCategory(category);
          const newData = validateAndParse(data, schema, `${category}/${filename}`);
 
+         // [FIX] Denormalize Abilities (Array -> Object) for Heroes
+         // This ensures we write the schema-compliant Object format to disk,
+         // even though the Editor works with Arrays.
+         if (category === 'heroes' && 'abilities' in (newData as Record<string, unknown>)) {
+             const anyData = newData as Record<string, unknown>;
+             if (Array.isArray(anyData.abilities)) {
+                 anyData.abilities = denormalizeAbilities(anyData.abilities);
+             }
+         }
+
          // Use path.resolve for absolute path consistency
          const filePath = path.resolve(dataDir, category, filename);
 
@@ -64,36 +78,86 @@ export class DataService {
          // SAFETY: Create single-file backup before overwriting
          await backupService.backupFile(dataDir, filePath);
 
-         if (queue) {
-             await patchService.enqueueEntityChange(dataDir, newData, category, filename);
-         } else {
-             // AUTO-PATCH RECORDING (Standard Save)
-             // Every non-queued save creates an immediate audit record in patches.json.
-             
-             let oldData: unknown;
-             if (await fileService.exists(filePath)) {
-                 try {
-                     oldData = await fileService.readJson(filePath);
-                 } catch {
-                     logger.warn(`Failed to read old data for patch recording: ${filename}`);
-                 }
+         // Read existing data once — shared by shape guard, type guard, and patch recording
+         let existingData: Record<string, unknown> | null = null;
+         if (await fileService.exists(filePath)) {
+             try {
+                 existingData = await fileService.readJson(filePath) as Record<string, unknown>;
+             } catch {
+                 logger.warn(`[SHAPE GUARD] Could not read existing file for key check: ${filename}`);
              }
-             // if(oldData) oldDataAny = oldData as Record<string, unknown>;
-
-             const change = {
-                 target_id: filename,
-                  name: String((newData as Record<string, unknown>).name || filename),
-                 field: 'entity',
-                 old: oldData,
-                 new: newData,
-                 category: category
-             };
-             
-             await patchService.recordPatch(dataDir, `Auto-Save: ${change.name}`, 'Hotfix', [change]);
          }
 
-         await fileService.writeJson(filePath, newData);
-         return newData;
+         // KEY PRESERVATION GUARD: Never drop existing fields from a file.
+         // If the incoming data is missing keys that exist on disk, merge
+         // the original values back in. This prevents normalization or
+         // frontend bugs from silently corrupting data shape.
+         let safeData = newData;
+         if (existingData) {
+                 const incoming = safeData as Record<string, unknown>;
+                 const missingKeys = Object.keys(existingData).filter(k => !(k in incoming));
+                 
+                 if (missingKeys.length > 0) {
+                     logger.warn(`[SHAPE GUARD] ${category}/${filename}: incoming data missing keys [${missingKeys.join(', ')}] — preserving originals`);
+                     const merged = { ...existingData, ...incoming };
+                     safeData = merged as typeof newData;
+                 }
+
+                 // TYPE GUARD: Prevent incompatible type changes (e.g. string -> number)
+                 // If a key exists in both but has an incompatible type, revert to original.
+                 // NOTE: object -> array is allowed (known normalization path, e.g. legacy abilities)
+                 const inc = safeData as Record<string, unknown>;
+                 for (const key in existingData) {
+                     if (key in inc) {
+                         const oldVal = existingData[key];
+                         const newVal = inc[key];
+                         
+                         // Skip null/undefined checks for simplicity (allow nulling out)
+                         if (oldVal === null || oldVal === undefined || newVal === null || newVal === undefined) continue;
+
+                         const oldType = Array.isArray(oldVal) ? 'array' : typeof oldVal;
+                         const newType = Array.isArray(newVal) ? 'array' : typeof newVal;
+
+                         if (oldType !== newType) {
+                              // Allow object -> array (legacy normalization, e.g. abilities)
+                              if (oldType === 'object' && newType === 'array') {
+                                   logger.info(`[TYPE GUARD] ${category}/${filename}: key '${key}' normalized from ${oldType} to ${newType} — allowing`);
+                                   continue;
+                              }
+                              // Allow array -> object (save denormalization, e.g. abilities)
+                              if (oldType === 'array' && newType === 'object') {
+                                   logger.info(`[TYPE GUARD] ${category}/${filename}: key '${key}' denormalized from ${oldType} to ${newType} — allowing`);
+                                   continue;
+                              }
+                              logger.warn(`[TYPE GUARD] ${category}/${filename}: key '${key}' changed type from ${oldType} to ${newType} — preserving original`);
+                              inc[key] = oldVal;
+                         }
+                     }
+                 }
+         }
+
+         // Stamp last_modified before diff/queue so the recorded change
+         // and the persisted file have the same timestamp.
+         (safeData as Record<string, unknown>).last_modified = new Date().toISOString();
+
+         if (queue) {
+             await patchService.enqueueEntityChange(dataDir, safeData, category, filename);
+         } else {
+             // AUTO-PATCH RECORDING (Standard Save)
+              // Every non-queued save creates an immediate audit record in patches.json.
+              // Uses slim diffs instead of full old/new snapshots.
+              const changeName = String((safeData as Record<string, unknown>).name || filename);
+              const change = buildSlimChange(filename, changeName, 'entity', category, existingData, safeData);
+              
+              await patchService.recordPatch(dataDir, `Auto-Save: ${changeName}`, 'Hotfix', [change]);
+         }
+
+         await fileService.writeJson(filePath, sortKeys(safeData));
+
+         // Publish static API files if this is the community-api data dir
+         await publisherService.publishIfNeeded(dataDir);
+
+         return safeData;
     }
 
     /**
@@ -136,13 +200,14 @@ export class DataService {
                      }
                 }
 
-                // 2. Dirty Check
+                // 2. Dirty Check — also captures existing data for patch recording
+                let existingBatchData: unknown = undefined;
                 if (await fileService.exists(filePath)) {
                     try {
-                        const existing = await fileService.readJson(filePath);
+                        existingBatchData = await fileService.readJson(filePath);
                         
                         // Compare (excluding last_modified)
-                        const existingClean = { ...(existing as Record<string, unknown>) };
+                        const existingClean = { ...(existingBatchData as Record<string, unknown>) };
                         delete existingClean.last_modified;
                         
                         const newClean = { ...(validData as Record<string, unknown>) };
@@ -160,8 +225,8 @@ export class DataService {
                 // 3. Update timestamp and write
                 (validData as Record<string, unknown>).last_modified = new Date().toISOString();
                 
-                await fileService.writeJson(filePath, validData);
-                results.push({ filename, success: true });
+                await fileService.writeJson(filePath, sortKeys(validData));
+                results.push({ filename, success: true, _oldData: existingBatchData } as typeof results[0] & { _oldData?: unknown });
             } catch (err) {
                  logger.error(`Error saving ${filename}:`, { error: err });
                  results.push({ filename, success: false, error: (err as Error).message });
@@ -173,21 +238,19 @@ export class DataService {
         if (successfulUpdates.length > 0) {
             const changes: Change[] = [];
             for (const update of updates) {
-                if (results.find(r => r.filename === update.filename && r.success)) {
-                     // We don't have "old" data easily here without re-reading or caching earlier.
-                     // For batch saves, we'll accept "old" as undefined for now to save perf,
-                     // or we could have captured it during the loop. 
-                     // Let's rely on the fact that these are usually new or massive overwrites.
-                     // Actually, a defined "old" is better. But simplest valid Change is old=optional?
-                     // Schema says old is any().
-                     changes.push({
-                        target_id: update.filename,
-                         name: String((update.data as Record<string, unknown>).name || update.filename),
-                        field: 'entity',
-                        old: undefined, // TODO: optimize if needed
-                        new: stripInternalFields(update.data), // Clean it
-                        category: category
-                     });
+                const result = results.find(r => r.filename === update.filename && r.success);
+                if (result) {
+                     const updateName = String((update.data as Record<string, unknown>).name || update.filename);
+                     // Use existing data captured during dirty-check for real diffs
+                     const oldData = (result as typeof result & { _oldData?: unknown })._oldData;
+                     changes.push(buildSlimChange(
+                         update.filename,
+                         updateName,
+                         'entity',
+                         category,
+                         oldData,
+                         update.data
+                     ));
                 }
             }
             

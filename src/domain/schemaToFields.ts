@@ -169,7 +169,7 @@ export function schemaToFields(
 /** Fields handled by custom panels or not user-editable */
 const SYSTEM_FIELDS = [
   '$schema', 'id', 'entity_id', 'name', 'icon',
-  'mechanics', 'changelog', 'tags',
+  'mechanics', 'tags',
   'image_required', 'last_modified',
 ];
 
@@ -185,7 +185,7 @@ export const UNIT_FIELD_CONFIG: SchemaFieldsConfig = {
     heal_amount: 'Heal Amount',
   },
   order: [
-    'category', 'magic_school', 'tier', 'rank', 'cost', 'population',
+    'category', 'magic_school', 'rank', 'size', 'population',
     'health', 'damage', 'dps', 'attack_interval', 'range',
     'movement_speed', 'movement_type',
     'charges', 'recharge_time', 'cast_time',
@@ -195,7 +195,10 @@ export const UNIT_FIELD_CONFIG: SchemaFieldsConfig = {
 };
 
 export const HERO_FIELD_CONFIG: SchemaFieldsConfig = {
-  exclude: [...SYSTEM_FIELDS, 'type', 'abilities', 'ultimate_ability'],
+  exclude: [
+    ...SYSTEM_FIELDS, 'type', 'abilities', 'ultimate_ability',
+    'magic_school', 'passive_health_regen', 'heal_amount', 'class', 'size'
+  ],
   labels: {
     hero_class: 'Class',
     movement_speed: 'Speed',
@@ -205,7 +208,7 @@ export const HERO_FIELD_CONFIG: SchemaFieldsConfig = {
     cast_time: 'Cast Time (s)',
   },
   order: [
-    'hero_class', 'category', 'difficulty', 'rank', 'cost', 'population',
+    'hero_class', 'category', 'difficulty', 'rank', 'population',
     'health', 'damage', 'dps', 'attack_interval', 'range',
     'movement_speed', 'movement_type',
     'charges', 'recharge_time', 'cast_time',
@@ -221,9 +224,30 @@ export const CONSUMABLE_FIELD_CONFIG: SchemaFieldsConfig = {
     buff_target: 'Buff Target',
   },
   order: [
-    'category', 'effect_type', 'rarity', 'cost',
-    'value', 'duration', 'cooldown', 'stack_size',
+    'category', 'effect_type',
+    'value', 'duration', 'stack_size',
     'buff_target',
+    'description',
+  ],
+};
+
+export const SPELL_FIELD_CONFIG: SchemaFieldsConfig = {
+  exclude: [
+    ...SYSTEM_FIELDS, 'type',
+    'health', 'movement_speed', 'movement_type', 'population',
+    'passive_health_regen', 'heal_amount', 'size',
+  ],
+  labels: {
+    magic_school: 'School',
+    attack_interval: 'Interval',
+    recharge_time: 'Recharge (s)',
+    cast_time: 'Cast Time (s)',
+  },
+  order: [
+    'category', 'magic_school', 'rank',
+    'damage', 'dps', 'range', 'radius',
+    'value', 'duration', 'cooldown',
+    'charges', 'recharge_time', 'cast_time',
     'description',
   ],
 };

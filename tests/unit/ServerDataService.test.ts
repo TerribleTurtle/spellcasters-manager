@@ -128,4 +128,101 @@ describe('Server DataService', () => {
             expect(fileService.writeJson).not.toHaveBeenCalled();
         });
     });
+
+    describe('saveData — TYPE GUARD', () => {
+        const passthroughSchema = { parse: (d: unknown) => d };
+
+        beforeEach(() => {
+            vi.mocked(getSchemaForCategory).mockReturnValue(passthroughSchema as any);
+            vi.mocked(fileService.writeJson).mockResolvedValue(undefined);
+            // backupFile may not be in mock — add it
+            (backupService as any).backupFile = vi.fn().mockResolvedValue(null);
+        });
+
+        it('allows object → array normalization (e.g. legacy abilities)', async () => {
+            // Existing file has abilities as an object (legacy)
+            vi.mocked(fileService.exists).mockResolvedValue(true);
+            vi.mocked(fileService.readJson).mockResolvedValue({
+                name: 'Shadow Weaver',
+                abilities: { primary: { name: 'Slash' }, defense: { name: 'Block' } }
+            });
+
+            // Frontend sends abilities as an array (normalized)
+            const payload = {
+                name: 'Shadow Weaver',
+                abilities: [
+                    { name: 'Slash', type: 'Primary', cooldown: 10 },
+                    { name: 'Block', type: 'Defense', cooldown: 5 }
+                ]
+            };
+
+            await dataService.saveData(dataDir, 'heroes', 'shadow_weaver.json', payload);
+
+            // Should write with the OBJECT format (denormalized) per schema
+            const writtenData = vi.mocked(fileService.writeJson).mock.calls[0][1] as Record<string, unknown>;
+            expect(Array.isArray(writtenData.abilities)).toBe(false);
+            expect(writtenData.abilities).toHaveProperty('primary');
+            expect((writtenData.abilities as any).primary.name).toBe('Slash');
+        });
+
+        it('blocks incompatible type changes (string → number)', async () => {
+            vi.mocked(fileService.exists).mockResolvedValue(true);
+            vi.mocked(fileService.readJson).mockResolvedValue({
+                name: 'Grunt',
+                description: 'A basic unit'
+            });
+
+            // Frontend accidentally sends description as a number
+            const payload = {
+                name: 'Grunt',
+                description: 42
+            };
+
+            await dataService.saveData(dataDir, 'units', 'grunt.json', payload);
+
+            // Should revert description to original string
+            const writtenData = vi.mocked(fileService.writeJson).mock.calls[0][1] as Record<string, unknown>;
+            expect(writtenData.description).toBe('A basic unit');
+            expect(typeof writtenData.description).toBe('string');
+        });
+
+        it('preserves missing keys from existing file (SHAPE GUARD)', async () => {
+            vi.mocked(fileService.exists).mockResolvedValue(true);
+            vi.mocked(fileService.readJson).mockResolvedValue({
+                name: 'Grunt',
+                health: 100,
+                legacy_field: 'preserve_me'
+            });
+
+            // Frontend payload is missing legacy_field
+            const payload = {
+                name: 'Grunt',
+                health: 150
+            };
+
+            await dataService.saveData(dataDir, 'units', 'grunt.json', payload);
+
+            const writtenData = vi.mocked(fileService.writeJson).mock.calls[0][1] as Record<string, unknown>;
+            expect(writtenData.legacy_field).toBe('preserve_me');
+            expect(writtenData.health).toBe(150);
+        });
+
+        it('does not revert when types match', async () => {
+            vi.mocked(fileService.exists).mockResolvedValue(true);
+            vi.mocked(fileService.readJson).mockResolvedValue({
+                name: 'Grunt',
+                health: 100
+            });
+
+            const payload = {
+                name: 'Grunt',
+                health: 200
+            };
+
+            await dataService.saveData(dataDir, 'units', 'grunt.json', payload);
+
+            const writtenData = vi.mocked(fileService.writeJson).mock.calls[0][1] as Record<string, unknown>;
+            expect(writtenData.health).toBe(200);
+        });
+    });
 });

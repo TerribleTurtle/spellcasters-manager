@@ -4,6 +4,7 @@ import { Change, ChangeSchema } from '../../src/domain/schemas/index.js';
 import { logger } from '../utils/logger.js';
 import { auditLogger } from '../utils/auditLogger.js';
 import { AppError } from '../utils/AppError.js';
+import { ensureJsonExt } from '../utils/pathUtils.js';
 
 export class QueueService {
     /**
@@ -91,7 +92,12 @@ export class QueueService {
         const queueFile = path.join(dataDir, 'queue.json');
         const queue = await this.readQueueSafe(dataDir);
         
-        // Filter out changes that target this file (by ID or filename)
+        // Identify changes that target this file (by ID or filename)
+        const removedChanges = queue.filter(c => 
+            c.target_id === targetId || 
+            c.target_id === `${targetId}.json` ||
+            c.target_id === targetId.replace('.json', '')
+        );
         const newQueue = queue.filter(c => 
             c.target_id !== targetId && 
             c.target_id !== `${targetId}.json` &&
@@ -99,6 +105,10 @@ export class QueueService {
         );
         
         if (newQueue.length !== queue.length) {
+            // Revert all removed changes on disk
+            for (const change of removedChanges) {
+                await this.revertChange(dataDir, change);
+            }
             await fileService.writeJson(queueFile, newQueue);
             auditLogger.logAction(dataDir, 'QUEUE_REMOVE_BY_TARGET', { targetId });
         }
@@ -112,6 +122,9 @@ export class QueueService {
         if (index < 0 || index >= queue.length) {
             throw AppError.notFound("Queue item not found");
         }
+
+        // Revert the change on disk before removing from queue
+        await this.revertChange(dataDir, queue[index]);
 
         queue.splice(index, 1);
         await fileService.writeJson(queueFile, queue);
@@ -134,6 +147,11 @@ export class QueueService {
             }
         }
 
+        // Revert all changes on disk before removing from queue
+        for (const idx of sortedIndices) {
+            await this.revertChange(dataDir, queue[idx]);
+        }
+
         // Remove
         for (const idx of sortedIndices) {
             queue.splice(idx, 1);
@@ -144,6 +162,34 @@ export class QueueService {
         return queue;
     }
     
+    /**
+     * Reverts a change on disk by restoring the original (old) data.
+     * If old is undefined (entity was created), deletes the file.
+     */
+    private async revertChange(dataDir: string, change: Change): Promise<void> {
+        if (!change.category) {
+            logger.warn(`Cannot revert change for ${change.target_id}: no category`);
+            return;
+        }
+
+        const filePath = path.join(dataDir, change.category, ensureJsonExt(change.target_id));
+
+        try {
+            if (change.old !== undefined && change.old !== null) {
+                // Restore the original data
+                await fileService.writeJson(filePath, change.old);
+                logger.info(`Reverted ${change.target_id} to original state`);
+            } else {
+                // Entity was created by this change — remove it
+                await fileService.deleteFile(filePath);
+                logger.info(`Deleted ${change.target_id} (reverted creation)`);
+            }
+        } catch (e) {
+            logger.error(`Failed to revert change for ${change.target_id}`, { error: e });
+            // Don't throw — still allow queue removal even if revert fails
+        }
+    }
+
     /**
      * Calculates the diff between old and new data and adds it to the queue.
      */

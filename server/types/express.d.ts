@@ -5,6 +5,7 @@ declare global {
     interface Request {
       context: {
         dataDir: string;
+        assetsDir: string;
       };
     }
   }

@@ -4,10 +4,12 @@ import { fileService } from '../services/fileService.js';
 import { dataService } from '../services/dataService.js';
 import { importService } from '../services/importService.js';
 import { patchService } from '../services/patchService.js';
+import { publisherService } from '../services/publisherService.js';
 
 import { queueService } from '../services/queueService.js';
 import { logger } from '../utils/logger.js';
 import { validatePath } from '../utils/requestHelpers.js';
+import { buildSlimChange } from '../utils/slimChange.js';
 
 export { validatePath };
 
@@ -75,15 +77,9 @@ export const deleteData = async (req: Request, res: Response, next: NextFunction
             // AUDIT: Record delete patch before destroying data
             try {
                 const oldData = await fileService.readJson(filePath);
-                const change = {
-                    target_id: filename,
-                    name: String((oldData as Record<string, unknown>).name || filename),
-                    field: 'DELETE', // Special field name for deletion
-                    old: oldData,
-                    new: undefined,
-                    category: category
-                };
-                await patchService.recordPatch(dataDir, `Delete: ${change.name}`, 'Hotfix', [change]);
+                const deleteName = String((oldData as Record<string, unknown>).name || filename);
+                const change = buildSlimChange(filename, deleteName, 'DELETE', category, oldData, undefined);
+                await patchService.recordPatch(dataDir, `Delete: ${deleteName}`, 'Hotfix', [change]);
             } catch (auditErr) {
                 logger.warn("Failed to record delete audit patch", { error: auditErr });
                 // Continue with delete even if audit fails? 
@@ -93,6 +89,10 @@ export const deleteData = async (req: Request, res: Response, next: NextFunction
 
             await fileService.deleteFile(filePath);
             await queueService.removeByTargetId(dataDir, filename);
+
+            // Publish static API files if this is the community-api data dir
+            await publisherService.publishIfNeeded(dataDir);
+
             res.json({ success: true });
         } else {
             return next(AppError.notFound("File not found"));

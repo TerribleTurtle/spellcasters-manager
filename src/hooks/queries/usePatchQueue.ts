@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Change } from "@/types";
+import { safeArray } from "@/lib/guards";
 
 export function usePatchQueue() {
     const [pendingChanges, setPendingChanges] = useState<number>(0);
@@ -8,7 +9,8 @@ export function usePatchQueue() {
     const fetchQueue = useCallback(() => {
         import("@/services/PatchService").then(({ patchService }) => {
             patchService.getQueue()
-            .then((changes: Change[]) => {
+            .then((rawChanges: unknown) => {
+                const changes = safeArray<Change>(rawChanges);
                 setPendingChanges(changes.length);
                 const ids = new Set(changes.map(c => c.target_id || ""));
                 setQueuedIds(ids);

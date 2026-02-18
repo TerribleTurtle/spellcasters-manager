@@ -14,9 +14,9 @@
 
 ## Current Status
 
-**Phase:** Phase 10: Release Ready (v1.0.3)
-**Focus:** Deployment & Maintenance
-**Test Coverage:** 115 Tests Passing (100% Backend Unit/Integration/Security + Client Services)
+**Phase:** Phase 11: Schema Alignment Complete
+**Focus:** Maintenance | Enforcing Strict JSON Schemas ✅ Complete
+**Test Coverage:** 397 Tests Passing (Verified)
 
 ## Sources of Truth
 
@@ -90,8 +90,32 @@
 - [x] Deployment Fixes: Resolved 27 TSC errors (type narrowing on `unknown` values) across 10 files, stabilized flaky backup test. 115/115 tests, TSC clean.
 - [x] Cleanup-8 (Docs): Documentation audit & fixes. `USER_GUIDE.md` rewritten (removed DEV/LIVE, Save+Tag). `README.md` workflow table corrected. `.env.example` completed. Dead `'quick'` save type removed from `SavePreviewDialog` + `useDiffLogic`. TSC clean, 115/115 tests, lint 0 errors.
 - [x] Refactoring Audit #3: Full codebase audit. Extracted `ImportService` from `DataService` (365→210 lines). 115/115 tests.
+- [x] Delta-Only Save Fix: `useDiffLogic` now computes user-changed fields only, applies delta to raw disk data. Prevents `normalizeHero` from rewriting `class`→`hero_class` or abilities Object→Array on save. 5 regression tests + audit script. 182/182 tests.
+- [x] Data Shape Protection: `HeroSchema` fixed to accept both Array and Object abilities. `class` field added to schema. 154 shape-preservation tests covering all 35 mock files. 336/336 total tests.
+- [x] Backend Save Guard: `dataService.saveData` now reads existing file before writing and merges back any missing keys. Prevents silent field loss regardless of frontend behavior. 336/336 tests.
+- [x] Queue Revert: Removing items from the patch queue now reverts entity data on disk to its original state. `revertChange` helper in `QueueService`. 4 new unit tests (177 total).
+- [x] Save/Queue Guard: Save and Queue buttons disabled when no user changes (`!isDirty && !isNew && !isRestored`). 5 new EditorToolbar tests. 343/343 tests.
+- [x] Test Audit #2 (/test-audit): Grade A- (up from B+). 344/344 tests. Quick fixes: split compound Middleware test (7→8), jsdom `environmentMatchGlobs`.
+- [x] Cleanup-9: Stale TODO removed (`dataService.ts`), README test count updated (173→344). TSC clean, lint 0 errors, 344/344 tests. `.env.example` verified.
+- [x] Frontend Data Shape Safety Audit: Fixed 7 unsafe `.map()`/`.filter()`/`Object.entries()` calls across 5 files (`HeroAbilitiesPanel`, `PreviewDetailPage`, `HistoryGrid`, `DiffCard`, `usePatchQueue`). All now use `Array.isArray` guards. 343/344 tests (1 pre-existing flaky integration test).
+- [x] Data Integrity Safeguards: Created `src/lib/guards.ts` (`safeArray`, `safeObject`). Refactored 6 files to use centralized guards. Added API response validation in client `DataService.getAll/getBulk`. 344/344 tests.
+- [x] Server-Side `last_modified`: `dataService.saveData` now stamps `last_modified` ISO timestamp on every single-entity save (matching existing `saveBatch` behavior). TSC clean, 11/11 DataService tests pass.
+- [x] Cleanup-10 (cleanup-5): Fixed 5 build errors (`HeroAbilitiesPanel` safeArray generic, `HistoryGrid` state cast, `vite.config` ts-ignore, `AppSidebar.test` mock data, `TableEditor.test` import path). Build passes, 344/344 tests (1 pre-existing flaky), lint 0 errors, no debug artifacts.
+- [x] Publisher Redesign (Phase 1-3): Removed `balance_direction` field + `balance_index.json`. Paginated changelog (`changelog_page_N.json` + `changelog_index.json`). `publishIfNeeded()` now triggers on save/delete/commit. Community-API schemas updated. 345/345 tests.
+- [x] SpellcastersDB Migration (Phase 4): Updated types/schemas/service for paginated changelog API. Removed all balance_index/PatchType badge code. Added `InspectorHistory` (most recent patch in inspector), `PatchHistorySection` sort/filter controls, `useEntityHistory` hook. Rewrote 3 test files. Zero stale references.\r\n- [x] Slim Commit Pipeline: `commitPatch` now slims queue changes (full→diffs) before writing to `patches.json`. Extracted `buildSlimChange` to `server/utils/slimChange.ts`. Fixed `last_modified` timing (stamp before diff). Fixed `vite.config.ts` lint. 345/345 tests, TSC clean, lint 0 errors.
+
+- [x] Data Pipeline Audit & Fixes: Delete patches now use `buildSlimChange` (consistent slim diffs). Batch saves pass real `oldData` for actual diffs (was hollow). Standard save reads disk once instead of twice. TSC clean, 345 tests.
+- [x] Live Asset Path Fix: `ASSETS_DIR` now resolves dynamically to support both mock (nested) and live (sibling) folder structures. Injected `assetsDir` into request context. 345/345 tests.
+- [x] Mock Data Restructure: Moved content to `mock_data/data` and `mock_data/assets` (sibling). Aligned mock environment with live repo structure. Server logic simplified to always use sibling assets. 345/345 tests.
+- [x] Strict Schema Alignment (Phase 11): Editor fields/types now match community API schemas exactly. Removed phantom fields (`tier`, `cost`, `rarity`). Added conformance tests.
+- [x] Schema Conformance Test: Added `SchemaConformance.test.ts` to recursively verify Zod vs JSON schema parity.
+- [x] Ordered JSON Output: Created `sortKeys` utility in `server/utils/jsonUtils.ts`. Integrated into `DataService` and `PatchService`. All entity and patch files now have deterministic key order (`$schema`→`id`→`name`→alpha→`last_modified`→`changelog`). 6 unit tests. TSC clean.
+- [x] Test Suite Cleanup: Fixed 8 pre-existing test failures (path errors, missing imports, schema drift, flaky Windows file locks). Deleted orphaned `changelog_trim.test.ts`. **43/43 files, 394/394 tests green.**
+- [x] Publisher Commit Integration: `publish()`/`publishIfNeeded()` now return written file paths. All 3 git commit flows (`commitPatch`, `quickSave`, `rollbackPatch`) stage changelog/timeline files. Fixed double `.json.json` timeline extension. 3 new regression tests. **43/43 files, 397/397 tests.**
 
 ### Planned
+
+- [x] Add backend integration tests for TYPE GUARD type-mismatch scenarios (guard + report)
 
 ### Ready for Release 🚀
 
@@ -108,3 +132,8 @@
 - [x] Test Remediation Phase 4: Frontend smoke tests complete. Added TableEditor (2) and AppSidebar (3). Suite total: 173 passing. Mission Accomplished.
 - [x] Test Infra: Added `@testing-library/react`, `jsdom` testing dependencies. Created `src/hooks/useEditorForm.test.tsx` regression suite.
 - [x] Deployment Verification (v1.0.3): TSC clean, Lint clean, 173/173 tests, secrets scan clear, CHANGELOG updated, CI branch fixed.
+- [x] HeroAbilitiesPanel Optimization: Refactored to remove top-level useWatch, extracted memoized AbilityItem, added regression test. Performance bottleneck resolved.
+- [x] Patch Manager Diff Fix: `JsonDiff.tsx` now displays inner property paths (e.g., `cooldown:`) for array-type diffs (`kind: 'A'`) from slim patches. TSC clean.
+- [x] Hero Abilities Save Fix: Backend TYPE GUARD in `dataService.ts` was reverting `object → array` normalization (e.g., legacy abilities), silently discarding user edits. Fixed to allow known normalization. TSC clean, 4/4 DataService tests.
+- [x] Slim Patch Normalization: `buildSlimChange` in `slimChange.ts` now normalizes legacy Object abilities → Array via `normalizeForDiff` before `deep-diff`. Prevents bloated patches recording entire abilities list. 3 regression tests. TSC clean.
+- [x] Entity Changelog Optimization: `dataService.ts` now trims the per-file `changelog` array to the last 5 entries on save. Full history is preserved in `patches.json`, preventing unbounded growth of entity files. Verified with unit test.

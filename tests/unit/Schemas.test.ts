@@ -81,7 +81,7 @@ describe('Domain Schemas', () => {
                 title: 'Balance Update',
                 date: '2023-01-01',
                 changes: [
-                    { target_id: 'u1', name: 'Unit 1', field: 'damage', old: 10, new: 15, balance_direction: 'buff' }
+                    { target_id: 'u1', name: 'Unit 1', field: 'damage', old: 10, new: 15 }
                 ]
             };
             const result = PatchSchema.safeParse(patch);
@@ -90,15 +90,6 @@ describe('Domain Schemas', () => {
 
         it('validates change object structure', () => {
             const invalidChange = { target_id: 'u1' }; // Missing name, field, old, new
-            const result = ChangeSchema.safeParse(invalidChange);
-            expect(result.success).toBe(false);
-        });
-
-        it('validates balance_direction enum', () => {
-            const invalidChange = { 
-                target_id: 'u1', name: 'n', field: 'f', old: 1, new: 2, 
-                balance_direction: 'invalid' 
-            };
             const result = ChangeSchema.safeParse(invalidChange);
             expect(result.success).toBe(false);
         });

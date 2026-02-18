@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schemas/v2/units.schema.json",
+  "entity_id": "skeleton_warrior",
+  "name": "Skeleton Warrior",
+  "category": "Creature",
+  "magic_school": "Necromancy",
+  "rank": "I",
+  "description": "Undead soldier that captures altars quickly in large groups.",
+  "image_required": true,
+  "tags": [],
+  "changelog": [
+    {
+      "version": "0.0.1",
+      "date": "2026-02-08T09:49:16.838860+00:00",
+      "description": "Initial Closed Beta 2 Data"
+    }
+  ],
+  "mechanics": {
+    "capture_speed_modifier": 1.25,
+    "damage_modifiers": [
+      {
+        "multiplier": 1.6,
+        "target_types": [
+          "Creature"
+        ]
+      },
+      {
+        "multiplier": 0.9,
+        "target_types": [
+          "Building"
+        ]
+      }
+    ]
+  },
+  "damage": 15,
+  "health": 200,
+  "movement_speed": 3,
+  "movement_type": "Ground",
+  "dps": 15,
+  "attack_interval": 1.0,
+  "charges": 1,
+  "recharge_time": 5,
+  "cast_time": 0,
+  "population": 0
+}

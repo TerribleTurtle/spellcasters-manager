@@ -1,8 +1,8 @@
 import { Unit } from "@/domain/schemas";
+import { safeObject } from "@/lib/guards";
 import { getSchoolTheme } from "./schoolColors";
 import { 
   ArrowLeft, 
-  History, 
   Zap, 
   Shield, 
   Sword, 
@@ -40,8 +40,7 @@ export function PreviewDetailPage({ data }: PreviewDetailPageProps) {
   const rank = data.rank || "?";
   const category = data.category || "Unit";
   
-  // Format changelog if present
-  const changelog = (data.changelog || []) as Array<{ version: string; date?: string; description?: string; title?: string }>;
+
 
 
 
@@ -135,12 +134,12 @@ export function PreviewDetailPage({ data }: PreviewDetailPageProps) {
         </div>
 
         {/* Mechanics */}
-        {data.mechanics && (
+        {Object.keys(safeObject(data.mechanics)).length > 0 && (
              <div className="space-y-3">
                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Mechanics</h3>
                  <div className="space-y-2">
                     {/* Render arbitrary mechanics */}
-                    {Object.entries(data.mechanics).map(([key, value]) => {
+                    {Object.entries(safeObject(data.mechanics)).map(([key, value]) => {
                          // Attempt to format known mechanic shapes or just dump
                          if (key === 'damage_modifiers' && Array.isArray(value)) {
                              return (value as Array<{ multiplier: number; target_types?: string[] }>).map((mod, idx) => (
@@ -168,37 +167,7 @@ export function PreviewDetailPage({ data }: PreviewDetailPageProps) {
              </div>
         )}
 
-        {/* Patch History Section */}
-        <div className="pt-6 border-t border-slate-800">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <History className="w-3.5 h-3.5" />
-                  Patch History
-            </h2>
-            
-            {changelog.length === 0 ? (
-                 <p className="text-xs text-slate-600 italic">No history available.</p>
-            ) : (
-                <div className="space-y-4 relative border-l border-slate-800 ml-1.5 pl-6 pb-2">
-                    {/* Reverse reverse! Newest first */}
-                    {[...changelog].reverse().map((entry, i) => (
-                          <div key={i} className="relative">
-                              <div className="absolute -left-[29px] top-1 w-2.5 h-2.5 rounded-full bg-slate-700 border-2 border-[#1e2030] ring-1 ring-slate-800" />
-                              <div className="flex flex-col gap-1">
-                                  <div className="flex items-center gap-2">
-                                      <span className="text-xs font-bold text-slate-200">{entry.version}</span>
-                                      <span className="text-[10px] text-slate-500">
-                                          {entry.date ? new Date(entry.date).toLocaleDateString() : ""}
-                                      </span>
-                                  </div>
-                                  <p className="text-xs text-slate-400 leading-tight">
-                                      {entry.description || entry.title || "Update"}
-                                  </p>
-                              </div>
-                          </div>
-                      ))}
-                </div>
-            )}
-        </div>
+
 
       </div>
     </div>

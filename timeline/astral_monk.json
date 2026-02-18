@@ -1,0 +1,164 @@
+[
+  {
+    "version": "quick",
+    "date": "2026-02-17",
+    "snapshot": {
+      "$schema": "../../schemas/v2/heroes.schema.json",
+      "entity_id": "astral_monk",
+      "name": "Astral Monk",
+      "class": "Duelist",
+      "hero_class": "Duelist",
+      "category": "Spellcaster",
+      "abilities": [
+        {
+          "name": "Arcane Alignment",
+          "type": "Passive",
+          "cooldown": 0,
+          "description": "All Astral spells recharge faster.",
+          "mana_cost": 0
+        },
+        {
+          "name": "Last Light",
+          "type": "Passive",
+          "cooldown": 0,
+          "description": "All damage dealt is increased against targets below half health.",
+          "mana_cost": 0
+        },
+        {
+          "name": "Cosmic Air",
+          "type": "Passive",
+          "cooldown": 0,
+          "description": "All flying creatures summoned by the Astral Monk are invisible.",
+          "mana_cost": 0
+        },
+        {
+          "name": "Astral Fists",
+          "type": "Primary",
+          "cooldown": 0,
+          "damage": 32,
+          "description": "Pierces through enemies with colossal astral fists.",
+          "mana_cost": 0,
+          "mechanics": {
+            "features": [
+              {
+                "name": "Combo Sequence",
+                "description": "Alternates between Palm Strike (32) and Power Punch (47)."
+              }
+            ],
+            "pierce": true
+          }
+        },
+        {
+          "name": "Veil Shift",
+          "type": "Defense",
+          "charges": 2,
+          "cooldown": 8,
+          "description": "Turns invisible and move faster.",
+          "duration": 1.5,
+          "mana_cost": 0,
+          "mechanics": {
+            "stealth": {
+              "break_on_attack": true,
+              "duration": 1.5
+            }
+          }
+        },
+        {
+          "name": "Dimension of Varani",
+          "type": "Ultimate",
+          "cooldown": 0,
+          "description": "Conjures a time bubble that freezes enemy projectiles and creatures inside it. The Ultimate is destroyed by Lifestone Large Shots (3 hits).",
+          "mana_cost": 0
+        }
+      ],
+      "description": "A Duelist who strikes from the shadows with fast astral fists and time-bending abilities.",
+      "difficulty": 3,
+      "health": 300,
+      "icon": "heroes/astral_monk.png",
+      "image_required": true,
+      "movement_type": "Ground",
+      "population": 0,
+      "tags": [],
+      "changelog": [
+        {
+          "version": "0.0.1",
+          "date": "2026-02-05T18:34:05.939129Z",
+          "description": "Initial Closed Beta 2 Data"
+        }
+      ]
+    }
+  },
+  {
+    "version": "1.0.1",
+    "date": "2026-02-18",
+    "snapshot": {
+      "$schema": "../../schemas/v2/heroes.schema.json",
+      "entity_id": "astral_monk",
+      "name": "Astral Monk",
+      "class": "Duelist",
+      "category": "Spellcaster",
+      "abilities": {
+        "defense": {
+          "name": "Veil Shift",
+          "charges": 2,
+          "cooldown": 8,
+          "description": "Turns invisible and move faster.",
+          "duration": 1.5,
+          "mechanics": {
+            "stealth": {
+              "break_on_attack": true,
+              "duration": 1.5
+            }
+          }
+        },
+        "passive": [
+          {
+            "name": "Arcane Alignment",
+            "description": "All Astral spells recharge faster."
+          },
+          {
+            "name": "Last Light",
+            "description": "All damage dealt is increased against targets below half health."
+          },
+          {
+            "name": "Cosmic Air",
+            "description": "All flying creatures summoned by the Astral Monk are invisible."
+          }
+        ],
+        "primary": {
+          "name": "Astral Fists",
+          "damage": 32,
+          "description": "Pierces through enemies with colossal astral fists.",
+          "mechanics": {
+            "features": [
+              {
+                "name": "Combo Sequence",
+                "description": "Alternates between Palm Strike (32) and Power Punch (47)."
+              }
+            ],
+            "pierce": true
+          }
+        },
+        "ultimate": {
+          "name": "Dimension of Varani",
+          "description": "Conjures a time bubble that freezes enemy projectiles and creatures inside it. The Ultimate is destroyed by Lifestone Large Shots (3 hits)."
+        }
+      },
+      "description": "A Duelist who strikes from the shadows with fast astral fists and time-bending abilities.",
+      "difficulty": 3,
+      "health": 300,
+      "image_required": true,
+      "movement_type": "Ground",
+      "population": 0,
+      "tags": [],
+      "last_modified": "2026-02-18T00:28:56.582Z",
+      "changelog": [
+        {
+          "version": "0.0.1",
+          "date": "2026-02-05T18:34:05.939129Z",
+          "description": "Initial Closed Beta 2 Data"
+        }
+      ]
+    }
+  }
+]

@@ -1,4 +1,4 @@
-import { Save, ListPlus, RotateCcw, Copy, Loader2 } from "lucide-react";
+import { Save, ListPlus, RotateCcw, Copy, Loader2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface EditorToolbarProps {
@@ -13,6 +13,7 @@ interface EditorToolbarProps {
   getValues: () => Record<string, unknown>;
   onSave: () => void;
   onQueue: () => void;
+  onQuickQueue: () => void;
   onReset: () => void;
 }
 
@@ -28,12 +29,13 @@ export function EditorToolbar({
   getValues,
   onSave,
   onQueue,
+  onQuickQueue,
   onReset,
 }: EditorToolbarProps) {
   const displayFilename = isNew ? generatedFilename || "new_entity.json" : filename;
 
   return (
-    <div className="flex items-center justify-between gap-4 py-3 px-4 bg-card/50 border border-border rounded-lg">
+    <div className="sticky top-0 z-50 flex items-center justify-between gap-4 py-3 px-4 bg-card/80 backdrop-blur-md border border-border rounded-lg shadow-sm">
       {/* Left side: filename info */}
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-sm font-medium text-muted-foreground truncate">
@@ -81,11 +83,23 @@ export function EditorToolbar({
 
         <Button
           type="button"
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 text-xs text-amber-500 hover:text-amber-600 hover:bg-amber-100/10"
+          onClick={onQuickQueue}
+          disabled={isSaving || (!isDirty && !isNew && !isRestored)}
+          title="Quick Queue (Skip Preview)"
+        >
+          <Zap className="w-3.5 h-3.5 fill-current" />
+        </Button>
+
+        <Button
+          type="button"
           variant="default"
           size="sm"
           className="gap-1.5 text-xs"
           onClick={onQueue}
-          disabled={isSaving}
+          disabled={isSaving || (!isDirty && !isNew && !isRestored)}
           title="Queue for next patch"
         >
           <ListPlus className="w-3.5 h-3.5" />
@@ -98,7 +112,7 @@ export function EditorToolbar({
           size="sm"
           className="gap-1.5 text-xs"
           onClick={onSave}
-          disabled={isSaving}
+          disabled={isSaving || (!isDirty && !isNew && !isRestored)}
           title="Save now"
         >
           {isSaving ? (

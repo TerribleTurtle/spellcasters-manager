@@ -1,0 +1,174 @@
+{
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\astral_tower.webp": {
+"mtime": 1770692544.7799163,
+"size": 7426
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\ballista.webp": {
+"mtime": 1770692544.7911396,
+"size": 13756
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\crypt.webp": {
+"mtime": 1770692544.8020592,
+"size": 12402
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\dryad.webp": {
+"mtime": 1770692544.8135974,
+"size": 15104
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\earth_golem.webp": {
+"mtime": 1770692544.8268542,
+"size": 17968
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\faerie.webp": {
+"mtime": 1770692544.8386476,
+"size": 15738
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\giant_shielder.webp": {
+"mtime": 1770692544.8513913,
+"size": 13872
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\harpy.webp": {
+"mtime": 1770692544.8651428,
+"size": 17282
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\harpy_nest.webp": {
+"mtime": 1770692544.8768477,
+"size": 13834
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\juggernaut.webp": {
+"mtime": 1770692544.8884509,
+"size": 13614
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\lich.webp": {
+"mtime": 1770692544.9012141,
+"size": 18482
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\lizard_archer.webp": {
+"mtime": 1770692544.9107046,
+"size": 15550
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\ogre.webp": {
+"mtime": 1770692544.9231532,
+"size": 12356
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\rampart.webp": {
+"mtime": 1770692544.9345632,
+"size": 9642
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\rocket_soldier.webp": {
+"mtime": 1770692544.9468586,
+"size": 13670
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\ruin_spider.webp": {
+"mtime": 1770692544.9585078,
+"size": 10656
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\skeleton_warrior.webp": {
+"mtime": 1770692544.9679425,
+"size": 15262
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\steam_tank.webp": {
+"mtime": 1770692544.9811313,
+"size": 15838
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\stone_behemoth.webp": {
+"mtime": 1770692544.9956594,
+"size": 18176
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\wolven_hunter.webp": {
+"mtime": 1770692545.008295,
+"size": 13440
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\units\\wyvern.webp": {
+"mtime": 1770692545.0207105,
+"size": 13458
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\astral_nova.webp": {
+"mtime": 1770692545.0441258,
+"size": 29274
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\astral_shot.webp": {
+"mtime": 1770692545.0638056,
+"size": 15812
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\earthquake.webp": {
+"mtime": 1770692545.0804768,
+"size": 22438
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\fire_ball.webp": {
+"mtime": 1770692545.0961292,
+"size": 14320
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\fire_rain.webp": {
+"mtime": 1770692545.1161132,
+"size": 25426
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\fire_ray.webp": {
+"mtime": 1770692545.1315932,
+"size": 16318
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\flame_surge.webp": {
+"mtime": 1770692545.1538064,
+"size": 22180
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\frost_surge.webp": {
+"mtime": 1770692545.1763287,
+"size": 26414
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\grand_lightning.webp": {
+"mtime": 1770692545.1979537,
+"size": 28176
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\heal_ray.webp": {
+"mtime": 1770692545.219394,
+"size": 26474
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\poison_grenade.webp": {
+"mtime": 1770692545.2365315,
+"size": 21964
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\resurrection.webp": {
+"mtime": 1770692545.257612,
+"size": 27338
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\sacrifice.webp": {
+"mtime": 1770692545.2716937,
+"size": 19556
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\spells\\thunder_ray.webp": {
+"mtime": 1770692545.290615,
+"size": 22224
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\titans\\gaia_beast.webp": {
+"mtime": 1770692545.3039384,
+"size": 19122
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\titans\\thanatos.webp": {
+"mtime": 1770692545.319435,
+"size": 19146
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\heroes\\astral_monk.webp": {
+"mtime": 1770824160.3447964,
+"size": 29670
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\heroes\\fire_elementalist.webp": {
+"mtime": 1770824160.3457963,
+"size": 21830
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\heroes\\iron_sorcerer.webp": {
+"mtime": 1770824160.3467965,
+"size": 19066
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\heroes\\mystic_scribe.webp": {
+"mtime": 1770824160.347796,
+"size": 21316
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\heroes\\stone_shaman.webp": {
+"mtime": 1770824160.3487964,
+"size": 20764
+},
+"C:\\Projects\\spellcasters-community-api\\assets\\heroes\\swamp_witch.webp": {
+"mtime": 1770824160.3497956,
+"size": 20536
+}
+}

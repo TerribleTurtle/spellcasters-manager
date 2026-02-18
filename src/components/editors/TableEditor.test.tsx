@@ -6,7 +6,7 @@ import '@testing-library/jest-dom';
 import { TableEditor } from './TableEditor';
 import { useForm, FormProvider } from 'react-hook-form';
 import { describe, it, expect } from 'vitest';
-import { EditorField } from './editorConfig';
+import { EditorField } from './TableEditor';
 
 describe('TableEditor Smoke Tests', () => {
     const mockFields: EditorField[] = [

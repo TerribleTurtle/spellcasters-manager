@@ -1,0 +1,230 @@
+[
+  {
+    "id": "patch_1704067206300",
+    "version": "auto",
+    "date": "2024-01-01",
+    "type": "Hotfix",
+    "changes": [
+      {
+        "name": "rotate.json",
+        "category": "units",
+        "change_type": "edit",
+        "diffs": [
+          {
+            "kind": "E",
+            "lhs": 5,
+            "path": [
+              "v"
+            ],
+            "rhs": 6
+          },
+          {
+            "kind": "E",
+            "lhs": "2024-01-01T00:00:05.250Z",
+            "path": [
+              "last_modified"
+            ],
+            "rhs": "2024-01-01T00:00:06.300Z"
+          }
+        ],
+        "field": "entity",
+        "target_id": "rotate.json"
+      }
+    ],
+    "tags": [],
+    "title": "Auto-Save: rotate.json"
+  },
+  {
+    "id": "patch_1704067205250",
+    "version": "auto",
+    "date": "2024-01-01",
+    "type": "Hotfix",
+    "changes": [
+      {
+        "name": "rotate.json",
+        "category": "units",
+        "change_type": "edit",
+        "diffs": [
+          {
+            "kind": "E",
+            "lhs": 4,
+            "path": [
+              "v"
+            ],
+            "rhs": 5
+          },
+          {
+            "kind": "E",
+            "lhs": "2024-01-01T00:00:04.200Z",
+            "path": [
+              "last_modified"
+            ],
+            "rhs": "2024-01-01T00:00:05.250Z"
+          }
+        ],
+        "field": "entity",
+        "target_id": "rotate.json"
+      }
+    ],
+    "tags": [],
+    "title": "Auto-Save: rotate.json"
+  },
+  {
+    "id": "patch_1704067204200",
+    "version": "auto",
+    "date": "2024-01-01",
+    "type": "Hotfix",
+    "changes": [
+      {
+        "name": "rotate.json",
+        "category": "units",
+        "change_type": "edit",
+        "diffs": [
+          {
+            "kind": "E",
+            "lhs": 3,
+            "path": [
+              "v"
+            ],
+            "rhs": 4
+          },
+          {
+            "kind": "E",
+            "lhs": "2024-01-01T00:00:03.150Z",
+            "path": [
+              "last_modified"
+            ],
+            "rhs": "2024-01-01T00:00:04.200Z"
+          }
+        ],
+        "field": "entity",
+        "target_id": "rotate.json"
+      }
+    ],
+    "tags": [],
+    "title": "Auto-Save: rotate.json"
+  },
+  {
+    "id": "patch_1704067203150",
+    "version": "auto",
+    "date": "2024-01-01",
+    "type": "Hotfix",
+    "changes": [
+      {
+        "name": "rotate.json",
+        "category": "units",
+        "change_type": "edit",
+        "diffs": [
+          {
+            "kind": "E",
+            "lhs": 2,
+            "path": [
+              "v"
+            ],
+            "rhs": 3
+          },
+          {
+            "kind": "E",
+            "lhs": "2024-01-01T00:00:02.100Z",
+            "path": [
+              "last_modified"
+            ],
+            "rhs": "2024-01-01T00:00:03.150Z"
+          }
+        ],
+        "field": "entity",
+        "target_id": "rotate.json"
+      }
+    ],
+    "tags": [],
+    "title": "Auto-Save: rotate.json"
+  },
+  {
+    "id": "patch_1704067202100",
+    "version": "auto",
+    "date": "2024-01-01",
+    "type": "Hotfix",
+    "changes": [
+      {
+        "name": "rotate.json",
+        "category": "units",
+        "change_type": "edit",
+        "diffs": [
+          {
+            "kind": "E",
+            "lhs": 1,
+            "path": [
+              "v"
+            ],
+            "rhs": 2
+          },
+          {
+            "kind": "E",
+            "lhs": "2024-01-01T00:00:01.050Z",
+            "path": [
+              "last_modified"
+            ],
+            "rhs": "2024-01-01T00:00:02.100Z"
+          }
+        ],
+        "field": "entity",
+        "target_id": "rotate.json"
+      }
+    ],
+    "tags": [],
+    "title": "Auto-Save: rotate.json"
+  },
+  {
+    "id": "patch_1704067201050",
+    "version": "auto",
+    "date": "2024-01-01",
+    "type": "Hotfix",
+    "changes": [
+      {
+        "name": "rotate.json",
+        "category": "units",
+        "change_type": "edit",
+        "diffs": [
+          {
+            "kind": "E",
+            "lhs": 0,
+            "path": [
+              "v"
+            ],
+            "rhs": 1
+          },
+          {
+            "kind": "E",
+            "lhs": "2024-01-01T00:00:00.000Z",
+            "path": [
+              "last_modified"
+            ],
+            "rhs": "2024-01-01T00:00:01.050Z"
+          }
+        ],
+        "field": "entity",
+        "target_id": "rotate.json"
+      }
+    ],
+    "tags": [],
+    "title": "Auto-Save: rotate.json"
+  },
+  {
+    "id": "patch_1704067200000",
+    "version": "auto",
+    "date": "2024-01-01",
+    "type": "Hotfix",
+    "changes": [
+      {
+        "name": "rotate.json",
+        "category": "units",
+        "change_type": "add",
+        "diffs": [],
+        "field": "entity",
+        "target_id": "rotate.json"
+      }
+    ],
+    "tags": [],
+    "title": "Auto-Save: rotate.json"
+  }
+]

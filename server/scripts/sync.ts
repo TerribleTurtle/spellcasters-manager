@@ -107,7 +107,7 @@ try {
     
     // Copy Assets
     const SOURCE_ASSETS_DIR = path.resolve(SOURCE_DIR, '../assets');
-    const TARGET_ASSETS_DIR = path.join(TARGET_DIR, 'assets');
+    const TARGET_ASSETS_DIR = path.resolve(TARGET_DIR, '../assets');
     
     if (fs.existsSync(SOURCE_ASSETS_DIR)) {
         console.log(`[Sync] Copying assets...`);
@@ -116,6 +116,20 @@ try {
         copyRecursive(SOURCE_ASSETS_DIR, TARGET_ASSETS_DIR);
     } else {
         console.warn(`[Sync] ⚠️ Source assets dir not found at ${SOURCE_ASSETS_DIR}`);
+    }
+
+    // Copy Schemas
+    const SOURCE_SCHEMAS_DIR = path.resolve(SOURCE_DIR, '../schemas');
+    const TARGET_SCHEMAS_DIR = path.resolve(PROJECT_ROOT, 'schemas');
+
+    if (fs.existsSync(SOURCE_SCHEMAS_DIR)) {
+        console.log(`[Sync] Copying schemas...`);
+        console.log(`[Source] SCHEMAS: ${SOURCE_SCHEMAS_DIR}`);
+        console.log(`[Target] SCHEMAS: ${TARGET_SCHEMAS_DIR}`);
+        // Schemas are critical, so we might want to ensure clean copy if valid
+        copyRecursive(SOURCE_SCHEMAS_DIR, TARGET_SCHEMAS_DIR);
+    } else {
+        console.warn(`[Sync] ⚠️ Source schemas dir not found at ${SOURCE_SCHEMAS_DIR}`);
     }
     
     // Restore Queue

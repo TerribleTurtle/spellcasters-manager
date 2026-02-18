@@ -33,8 +33,8 @@ describe('AppSidebar Smoke Tests', () => {
         view: 'forge' as const,
         setView: vi.fn(),
         items: [
-            { category: 'units', title: 'Units', items: [] },
-            { category: 'heroes', title: 'Heroes', items: [] }
+            { id: 'rocket_soldier.json', category: 'units' },
+            { id: 'astral_monk.json', category: 'heroes' }
         ],
         selectedUnit: null,
         onSelectUnit: vi.fn(),

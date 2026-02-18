@@ -1,18 +1,24 @@
 import { z } from "zod";
-import { BalanceDirectionSchema, PatchTypeSchema } from "./enums.js";
+import { PatchTypeSchema } from "./enums.js";
+
+// --- Change Type ---
+export const ChangeTypeSchema = z.enum(['add', 'edit', 'delete']);
+export type ChangeType = z.infer<typeof ChangeTypeSchema>;
 
 // --- Patch / Changes ---
 export const ChangeSchema = z.object({
   target_id: z.string(),
   name: z.string(),
   field: z.string(),
-  old: z.any(),
-  new: z.any(),
+  old: z.any().optional(),
+  new: z.any().optional(),
+  // Slim diff storage (replaces full old/new snapshots in patches.json)
+  change_type: ChangeTypeSchema.optional(),
+  diffs: z.array(z.any()).optional(),
   // Version History Fields
   tags: z.array(z.string()).optional(),
   category: z.string().optional(),
   reason: z.string().optional(),
-  balance_direction: BalanceDirectionSchema.optional(),
 });
 export type Change = z.infer<typeof ChangeSchema>;
 

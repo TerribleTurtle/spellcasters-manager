@@ -140,6 +140,7 @@ function App() {
                     <ScribePanel 
                         onOpenInEditor={handleOpenInEditor} 
                         onQueueChange={fetchQueue}
+                        onDataReverted={() => { fetchData(); setIsDirty(false); }}
                     />
                 </div>
             ) : (

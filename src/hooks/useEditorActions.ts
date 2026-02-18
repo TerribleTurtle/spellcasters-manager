@@ -9,6 +9,8 @@ export interface UseEditorActionsProps<T extends Record<string, unknown>> {
     category: string;
     filename: string;
     initialData: T | Partial<T> | undefined;
+    /** Pre-normalization snapshot from disk — preserves original file layout on save */
+    rawInitialData?: T | Partial<T> | undefined;
     onSave?: (data?: T, filename?: string) => void;
     onNavigateToScribe?: () => void;
     label?: string; // e.g. "Unit", "Hero", "Item" - defaults to capitalized category
@@ -20,6 +22,7 @@ export function useEditorActions<T extends Record<string, unknown>>({
     category,
     filename,
     initialData,
+    rawInitialData,
     onSave,
     onNavigateToScribe,
     label,
@@ -39,8 +42,8 @@ export function useEditorActions<T extends Record<string, unknown>>({
         onNavigateToScribe
     });
 
-    // 2. Diff/Preview Logic
-    const { preview, closePreview, requestSave } = useDiffLogic(initialData);
+    // 2. Diff/Preview Logic — rawInitialData preserves original file structure
+    const { preview, closePreview, requestSave } = useDiffLogic(initialData, rawInitialData);
 
     // 3. Helpers (Validation & Error Handling)
     const handleSaveError = (err: unknown, defaultMessage: string) => {

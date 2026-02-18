@@ -1,0 +1,35 @@
+{
+  "id": "patch_1704067206300",
+  "version": "auto",
+  "date": "2024-01-01",
+  "type": "Hotfix",
+  "changes": [
+    {
+      "name": "rotate.json",
+      "category": "units",
+      "change_type": "edit",
+      "diffs": [
+        {
+          "kind": "E",
+          "lhs": 5,
+          "path": [
+            "v"
+          ],
+          "rhs": 6
+        },
+        {
+          "kind": "E",
+          "lhs": "2024-01-01T00:00:05.250Z",
+          "path": [
+            "last_modified"
+          ],
+          "rhs": "2024-01-01T00:00:06.300Z"
+        }
+      ],
+      "field": "entity",
+      "target_id": "rotate.json"
+    }
+  ],
+  "tags": [],
+  "title": "Auto-Save: rotate.json"
+}

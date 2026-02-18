@@ -30,7 +30,7 @@ describe('AssetController', () => {
 
         mockReq = createMockRequest({
             body: {},
-            context: { dataDir: 'root/data', mode: 'dev' },
+            context: { dataDir: 'root/data', assetsDir: 'root/assets', mode: 'dev' },
             file: {
                 path: 'temp/upload.png',
                 filename: 'upload.png',
@@ -61,7 +61,7 @@ describe('AssetController', () => {
 
             expect(fs.renameSync).toHaveBeenCalledWith(
                 'temp/upload.png', 
-                expect.stringMatching(/root[/\\]data[/\\]assets[/\\]hero\.png/)
+                expect.stringMatching(/root[/\\]assets[/\\]hero\.png/)
             );
             expect(jsonSpy).toHaveBeenCalledWith({ success: true, filename: 'hero.png' });
         });
@@ -75,7 +75,7 @@ describe('AssetController', () => {
             // path.basename('../../hack.exe') -> 'hack.exe'
             expect(fs.renameSync).toHaveBeenCalledWith(
                 'temp/upload.png',
-                expect.stringMatching(/root[/\\]data[/\\]assets[/\\]hack\.exe/)
+                expect.stringMatching(/root[/\\]assets[/\\]hack\.exe/)
             );
         });
 
@@ -86,7 +86,7 @@ describe('AssetController', () => {
             uploadAsset(mockReq, mockRes as Response, nextSpy);
 
             expect(fs.mkdirSync).toHaveBeenCalledWith(
-                expect.stringMatching(/root[/\\]data[/\\]assets/), 
+                expect.stringMatching(/root[/\\]assets/), 
                 { recursive: true }
             );
         });

@@ -15,6 +15,10 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts', 'src/**/*.test.{ts,tsx}'],
+    // @ts-expect-error -- environmentMatchGlobs is a valid Vitest config but not in the TS types
+    environmentMatchGlobs: [
+      ['src/**/*.test.tsx', 'jsdom'],
+    ],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },

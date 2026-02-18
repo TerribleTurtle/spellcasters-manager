@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { safeArray } from "@/lib/guards";
 import { Patch, Change } from "@/types";
 import { patchService } from "@/services/PatchService";
 import { Input } from "@/components/ui/input";
@@ -48,7 +49,7 @@ export function HistoryGrid() {
             if (viewMode === 'changes') filters.flat = true;
 
             const result = await patchService.getHistory(filters);
-            setData(result);
+            setData(safeArray(result) as Patch[] | FlatChange[]);
         } catch {
             error("Failed to load history");
         } finally {
@@ -256,19 +257,24 @@ export function HistoryGrid() {
                                 <div className="p-3 bg-card/50">
                                     <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
                                         <Layers className="w-3 h-3" />
-                                        {patch.changes.length} changes
+                                        {safeArray<Change>(patch.changes).length} changes
                                     </div>
                                     {/* Preview top 3 changes */}
                                     <div className="space-y-2 pl-2 border-l-2 border-border/30">
-                                        {patch.changes.slice(0, 3).map((change, i) => (
+                                        {safeArray<Change>(patch.changes).slice(0, 3).map((change, i) => (
                                             <div key={i} className="text-xs flex items-center gap-2 text-foreground/80">
-                                                <span className={`w-1.5 h-1.5 rounded-full ${change.new === undefined ? 'bg-red-500' : change.old === undefined ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                                    change.change_type === 'delete' ? 'bg-red-500' :
+                                                    change.change_type === 'add' ? 'bg-green-500' :
+                                                    change.change_type === 'edit' ? 'bg-blue-500' :
+                                                    change.new === undefined ? 'bg-red-500' : change.old === undefined ? 'bg-green-500' : 'bg-blue-500'
+                                                }`} />
                                                 <span className="font-medium">{change.name}</span>
                                                 <span className="text-muted-foreground">.{change.field}</span>
                                             </div>
                                         ))}
-                                        {patch.changes.length > 3 && (
-                                            <div className="text-mini text-muted-foreground italic pl-3">+ {patch.changes.length - 3} more</div>
+                                        {safeArray<Change>(patch.changes).length > 3 && (
+                                            <div className="text-mini text-muted-foreground italic pl-3">+ {safeArray<Change>(patch.changes).length - 3} more</div>
                                         )}
                                     </div>
                                     

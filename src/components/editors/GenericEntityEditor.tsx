@@ -44,6 +44,7 @@ export function GenericEntityEditor<T extends { id?: string }>({
     editorActions,
     handleSaveAction: handleBasicSave,
     handleQueueAction,
+    handleQuickQueueAction,
     handleReset,
   } = useEditorForm<T>({
     ...props,
@@ -79,6 +80,7 @@ export function GenericEntityEditor<T extends { id?: string }>({
               getValues={form.getValues}
               onSave={form.handleSubmit(handleBasicSave, handleClientValidation)}
               onQueue={form.handleSubmit(handleQueueAction, handleClientValidation)}
+              onQuickQueue={form.handleSubmit(handleQuickQueueAction, handleClientValidation)}
               onReset={handleReset}
             />
 
@@ -110,7 +112,7 @@ export function GenericEntityEditor<T extends { id?: string }>({
                   
                   {config.extraPanels?.map((Panel, i) => (
                       <div key={i} className="mt-8">
-                          <Panel control={form.control} />
+                          <Panel control={form.control} initialData={baseData || undefined} />
                       </div>
                   ))}
               </>

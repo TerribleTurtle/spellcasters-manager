@@ -9,7 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select"
-import { Search, Ghost, ArrowUpDown } from 'lucide-react';
+import { Search, Ghost, ArrowUpDown, X } from 'lucide-react';
 
 import { EntityListHash } from "@/types";
 
@@ -68,15 +68,24 @@ export function EntityList({ items, selectedUnit, onSelectUnit, isLoading = fals
 
                 <div className="flex items-center gap-2">
                     <div className="relative group flex-1">
-                        <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
                         <Input 
                             type="text" 
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={`Search...`} 
                             disabled={isLoading}
-                            className="w-full bg-secondary/50 border-border/60 pl-9 pr-3 h-9 text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all placeholder:text-muted-foreground/50"
+                            className="w-full bg-secondary/50 border-border/60 pl-9 pr-8 h-9 text-sm focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all placeholder:text-muted-foreground/50"
                         />
+                        {search && (
+                            <button
+                                onClick={() => setSearch("")}
+                                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                                aria-label="Clear search"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                     
                     <Select value={sort} onValueChange={(v) => setSort(v as 'smart' | 'alpha' | 'alpha-desc')}>

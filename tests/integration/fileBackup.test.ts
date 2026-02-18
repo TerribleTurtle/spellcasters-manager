@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
@@ -82,7 +82,10 @@ describe('Single File Backup Integration', () => {
         
         for (let i = 1; i <= 6; i++) {
             vi.advanceTimersByTime(1000); // Advance 1 second for unique timestamp
-            await dataService.saveData(testDir, 'units', 'rotate.json', { v: i });
+            // Small real delay to avoid EPERM from rapid atomic renames on Windows
+            await vi.waitFor(async () => {
+                await dataService.saveData(testDir, 'units', 'rotate.json', { v: i });
+            }, { timeout: 5000 });
         }
 
         const backupRoot = path.join(testDir, 'backups', 'file_history', 'units');
