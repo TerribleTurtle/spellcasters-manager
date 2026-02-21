@@ -5,7 +5,7 @@ import { HeroAbilitiesPanel } from '@/components/editors/panels/HeroAbilitiesPan
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { describe, it, expect } from 'vitest';
-import React from 'react';
+
 
 // Wrapper to provide Form context
 const TestWrapper = ({ initialData }: { initialData?: Record<string, unknown> }) => {
@@ -19,7 +19,7 @@ const TestWrapper = ({ initialData }: { initialData?: Record<string, unknown> })
     });
     return (
         <Form {...form}>
-            <HeroAbilitiesPanel control={form.control} initialData={initialData} />
+            <HeroAbilitiesPanel control={form.control} initialData={initialData as any} />
         </Form>
     );
 };

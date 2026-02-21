@@ -5,24 +5,23 @@
  * @param errors The error object to traverse
  * @param parentKey Internal recursion key
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function flattenFormErrors(errors: any): string[] {
+export function flattenFormErrors(errors: unknown): string[] {
     const issues: string[] = [];
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const extract = (obj: any, prefix = '') => {
-        if (!obj) return;
+    const extract = (obj: unknown, prefix = '') => {
+        if (!obj || typeof obj !== 'object') return;
         
-        for (const key in obj) {
+        for (const [key, value] of Object.entries(obj)) {
             const currentPath = prefix ? `${prefix}.${key}` : key;
-            const value = obj[key];
             
-            if (value?.message && typeof value.message === 'string') {
-                issues.push(`${currentPath}: ${value.message}`);
-            } else if (typeof value === 'object' && value !== null) {
+            // value is typed as any here since Object.entries of unknown object is problematic, but we can do type checks
+            const v = value as Record<string, unknown>;
+            if (v?.message && typeof v.message === 'string') {
+                issues.push(`${currentPath}: ${v.message}`);
+            } else if (typeof v === 'object' && v !== null) {
                 // If it has a 'type' or 'ref' property it might be a leaf node without message
                 // but usually RHF errors have message. If deeper nesting:
-                extract(value, currentPath);
+                extract(v, currentPath);
             }
         }
     };

@@ -1,0 +1,164 @@
+[
+  {
+    "target_id": "ogre.json",
+    "name": "Ogre",
+    "field": "entity",
+    "old": {
+      "$schema": "../../schemas/v2/units.schema.json",
+      "entity_id": "ogre",
+      "name": "Ogre",
+      "category": "Creature",
+      "magic_school": "War",
+      "rank": "III",
+      "description": "Mighty warrior that crushes target areas with a hammer.",
+      "image_required": true,
+      "tags": [],
+      "mechanics": {
+        "damage_modifiers": [
+          {
+            "multiplier": 5,
+            "target_types": [
+              "Building"
+            ]
+          }
+        ]
+      },
+      "damage": 70,
+      "health": 2300,
+      "movement_speed": 3,
+      "movement_type": "Ground",
+      "dps": 70,
+      "attack_interval": 1,
+      "charges": 1,
+      "recharge_time": 50,
+      "cast_time": 0,
+      "population": 0
+    },
+    "new": {
+      "entity_id": "ogre",
+      "name": "Ogre",
+      "category": "Creature",
+      "magic_school": "War",
+      "rank": "III",
+      "description": "Mighty warrior that crushes target areas with a hammer.",
+      "image_required": true,
+      "tags": [],
+      "health": 2300,
+      "damage": 70,
+      "dps": 70,
+      "attack_interval": 1,
+      "movement_speed": 3,
+      "movement_type": "Ground",
+      "charges": 1,
+      "recharge_time": 50,
+      "cast_time": 0,
+      "population": 0,
+      "mechanics": {
+        "damage_modifiers": [
+          {
+            "multiplier": 5,
+            "target_types": [
+              "Building"
+            ]
+          },
+          {
+            "multiplier": 1.75,
+            "target_types": [
+              "Creature"
+            ]
+          }
+        ]
+      },
+      "last_modified": "2026-02-19T05:08:34.477Z",
+      "$schema": "../../schemas/v2/units.schema.json"
+    },
+    "category": "units",
+    "timestamp": "2026-02-19T05:08:34.478Z"
+  },
+  {
+    "target_id": "fire_ball.json",
+    "name": "Fire Ball",
+    "field": "entity",
+    "old": {
+      "entity_id": "fire_ball",
+      "name": "Fire Ball",
+      "description": "Fast projectile that deals medium Fire damage to a target.",
+      "category": "Spell",
+      "image_required": true,
+      "tags": [
+        "homing"
+      ],
+      "last_modified": "2026-02-18T07:17:56.992Z",
+      "$schema": "../../schemas/v2/spells.schema.json",
+      "magic_school": "Elemental",
+      "rank": "III",
+      "damage": 530,
+      "range": 80,
+      "charges": 1,
+      "recharge_time": 50,
+      "cast_time": 0
+    },
+    "new": {
+      "entity_id": "fire_ball",
+      "name": "Fire Ball",
+      "description": "Fast projectile emitting a burning aura that deals medium Fire damage to a target.",
+      "category": "Spell",
+      "image_required": true,
+      "tags": [
+        "homing"
+      ],
+      "mechanics": {},
+      "last_modified": "2026-02-19T05:10:47.465Z",
+      "$schema": "../../schemas/v2/spells.schema.json",
+      "magic_school": "Elemental",
+      "rank": "III",
+      "damage": 530,
+      "range": 80,
+      "charges": 1,
+      "recharge_time": 50,
+      "cast_time": 0.5
+    },
+    "category": "spells",
+    "timestamp": "2026-02-19T05:10:47.466Z"
+  },
+  {
+    "target_id": "astral_nova.json",
+    "name": "Astral Nova",
+    "field": "entity",
+    "old": {
+      "$schema": "../../schemas/v2/spells.schema.json",
+      "entity_id": "astral_nova",
+      "name": "Astral Nova",
+      "category": "Spell",
+      "magic_school": "Astral",
+      "rank": "IV",
+      "description": "Massive projectile that deals heavy damage on impact.",
+      "image_required": true,
+      "tags": [],
+      "damage": 4200,
+      "range": 80,
+      "charges": 1,
+      "recharge_time": 120,
+      "cast_time": 0
+    },
+    "new": {
+      "entity_id": "astral_nova",
+      "name": "Astral Nova",
+      "description": "Massive projectile emitting a damaging aura that deals heavy damage on impact.",
+      "category": "Spell",
+      "image_required": true,
+      "tags": [],
+      "last_modified": "2026-02-19T05:11:27.677Z",
+      "$schema": "../../schemas/v2/spells.schema.json",
+      "magic_school": "Astral",
+      "rank": "IV",
+      "damage": 4200,
+      "range": 80,
+      "charges": 1,
+      "recharge_time": 120,
+      "cast_time": 0
+    },
+    "category": "spells",
+    "timestamp": "2026-02-19T05:11:27.677Z"
+  }
+]

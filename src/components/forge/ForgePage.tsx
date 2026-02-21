@@ -22,8 +22,7 @@ interface ForgePageProps {
   onCreateCancel?: () => void;
 
   onCreateStart?: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onDuplicate?: (data: any) => void;
+  onDuplicate?: (data: unknown) => void;
   restoredChange?: Change | null;
   onDiscardRestoredChange?: () => void;
 }
@@ -133,7 +132,7 @@ export function ForgePage({
       <div className="flex-1 h-full overflow-y-auto custom-scrollbar relative flex flex-col min-w-0">
          
          {/* Inline View Switcher Toolbar */}
-         <div className="border-b border-border bg-card/30 backdrop-blur-sm px-6 py-3 flex items-center justify-between shrink-0">
+         <div className="border-b border-border bg-card/30 backdrop-blur-sm px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <Hammer className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-semibold">Studio</span>
@@ -168,14 +167,14 @@ export function ForgePage({
          </div>
 
          <div className="min-h-full">
-            <div className="p-6">
+            <div className="p-3 sm:p-6">
                 {renderEditor()}
             </div>
          </div>
       </div>
 
       {/* Right Column: Preview Panel */}
-      <PreviewPanel isOpen={showPreview && !!selectedUnit} unitData={unitData} />
+      <PreviewPanel isOpen={showPreview && !!selectedUnit} unitData={unitData} onClose={() => setShowPreview(false)} />
     </div>
   );
 }

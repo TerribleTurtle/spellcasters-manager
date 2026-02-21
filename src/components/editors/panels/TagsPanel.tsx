@@ -1,17 +1,12 @@
 import { Plus, X, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Control, useWatch, useFormContext } from "react-hook-form";
+import { useWatch, useFormContext } from "react-hook-form";
 import { useState } from "react";
-import { Unit } from "@/types";
 
-interface TagsPanelProps {
-  control: Control<Unit>;
-  initialData?: Unit;
-}
 
-export function TagsPanel({ control }: TagsPanelProps) {
-  const { setValue } = useFormContext();
+export function TagsPanel() {
+  const { setValue, control } = useFormContext();
   const tags = useWatch({ control, name: "tags" }) as string[] || [];
   const [newTag, setNewTag] = useState("");
 

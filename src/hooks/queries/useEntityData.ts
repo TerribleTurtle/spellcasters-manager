@@ -9,34 +9,35 @@ export function useEntityData() {
     const [isLoading, setIsLoading] = useState(true);
     const { error } = useToast();
 
-    const fetchData = useCallback(() => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
-        import("@/services/DataService").then(({ dataService }) => {
+        try {
+            const { dataService } = await import("@/services/DataService");
             const categories = getRegisteredCategories();
             const promises = categories.map(cat => dataService.getBulk(cat));
 
-            Promise.allSettled(promises).then((results) => {
-                 
-                const newRegistry: Record<string, BaseEntity[]> = {};
+            const results = await Promise.allSettled(promises);
+            const newRegistry: Record<string, BaseEntity[]> = {};
 
-                results.forEach((res, index) => {
-                    const category = categories[index];
-                    if (res.status === 'fulfilled') {
-                        const val = res.value as unknown; // Force unknown first
-                        if (Array.isArray(val)) {
-                            newRegistry[category] = val as BaseEntity[];
-                        } else {
-                            newRegistry[category] = [];
-                        }
+            results.forEach((res, index) => {
+                const category = categories[index];
+                if (res.status === 'fulfilled') {
+                    const val = res.value as unknown; // Force unknown first
+                    if (Array.isArray(val)) {
+                        newRegistry[category] = val as BaseEntity[];
                     } else {
-                        error(`Failed to load ${category}.`);
                         newRegistry[category] = [];
                     }
-                });
-    
-                setRegistry(newRegistry);
-            }).finally(() => setIsLoading(false));
-        });
+                } else {
+                    error(`Failed to load ${category}.`);
+                    newRegistry[category] = [];
+                }
+            });
+
+            setRegistry(newRegistry);
+        } finally {
+            setIsLoading(false);
+        }
     }, [error]);
 
     return { registry, isLoading, fetchData };

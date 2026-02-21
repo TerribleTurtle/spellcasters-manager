@@ -1,12 +1,30 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/toast-context';
+import { dataService } from '@/services/DataService';
 
-/**
- * @param initialData - Normalized data (used for detecting what the user changed)
- * @param rawData - Pre-normalization snapshot from disk (used as save base to preserve file layout)
- */
-export function useDiffLogic<T>(initialData: T | Partial<T> | undefined, rawData?: T | Partial<T> | undefined) {
+export interface UseDataMutationProps<T extends Record<string, unknown>> {
+    category: string;
+    filename: string;
+    entityLabel?: string;
+    initialData: T | Partial<T> | undefined;
+    rawInitialData?: T | Partial<T> | undefined;
+    onSave?: (data?: T, filename?: string) => void;
+    onNavigateToScribe?: () => void;
+}
+
+export function useDataMutation<T extends Record<string, unknown>>({
+    category,
+    filename,
+    entityLabel = 'Entity',
+    initialData,
+    rawInitialData,
+    onSave,
+    onNavigateToScribe,
+}: UseDataMutationProps<T>) {
     const { success } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    
+    // Preview State
     const [preview, setPreview] = useState<{
         isOpen: boolean;
         oldData: unknown;
@@ -17,6 +35,41 @@ export function useDiffLogic<T>(initialData: T | Partial<T> | undefined, rawData
 
     const closePreview = () => setPreview(null);
 
+    // Core Save Logic
+    const saveEntity = async (payload: T, queue: boolean, filenameOverride?: string) => {
+         setIsSaving(true);
+         const targetFilename = filenameOverride || filename;
+         try {
+             await dataService.save(category, targetFilename, payload, queue);
+             
+             if (queue) {
+                 success(
+                     "Saved & Added to Queue",
+                     onNavigateToScribe ? { label: "Review in Scribe ->", onClick: onNavigateToScribe } : undefined
+                 );
+             } else {
+                 success(`Saved ${entityLabel}`);
+             }
+
+             if (onSave) onSave(payload, targetFilename);
+         } finally {
+             setIsSaving(false);
+         }
+    };
+
+    const deleteEntity = async (onSuccess?: () => void) => {
+        setIsSaving(true);
+        try {
+            await dataService.delete(category, filename);
+            success(`${entityLabel} deleted successfully`);
+            if (onSave) onSave();
+            if (onSuccess) onSuccess();
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Diff/Payload generation Logic
     const requestSave = (
         type: 'silent' | 'queue',
         newData: Partial<T>,
@@ -29,19 +82,13 @@ export function useDiffLogic<T>(initialData: T | Partial<T> | undefined, rawData
         // Clean up empty strings to undefined to match "missing" keys in JSON
         const sanitizedNewData = { ...newData };
         for (const key in sanitizedNewData) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if ((sanitizedNewData as any)[key] === "") {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (sanitizedNewData as any)[key] = undefined;
+            if ((sanitizedNewData as Record<string, unknown>)[key] === "") {
+                (sanitizedNewData as Record<string, unknown>)[key] = undefined;
             }
         }
 
         // DELTA-ONLY SAVE: Find only the fields the user actually changed
-        // by comparing form state against the normalized initial (same structure).
-        // Then apply ONLY those changes to the raw disk data, preserving the
-        // original file layout (field names, data structures, ordering).
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userChanges: Record<string, any> = {};
+        const userChanges: Record<string, unknown> = {};
         if (!isNew && initialData) {
             for (const key in sanitizedNewData) {
                 const formVal = JSON.stringify((sanitizedNewData as Record<string, unknown>)[key]);
@@ -53,24 +100,21 @@ export function useDiffLogic<T>(initialData: T | Partial<T> | undefined, rawData
         }
 
         // Build final payload: raw disk data + only user changes + timestamp
-        const base = rawData || initialData;
+        const base = rawInitialData || initialData;
         const finalData = isNew
             ? JSON.parse(JSON.stringify({ ...initialData, ...sanitizedNewData })) as T
             : JSON.parse(JSON.stringify({ ...base, ...userChanges })) as T;
         
-        // Inject last_modified so the user sees it in the diff preview
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (finalData as any).last_modified = new Date().toISOString();
-
         // For the diff preview, compare raw disk data vs final payload
-        // so the user sees exactly what will change on disk
-        const diffBase = rawData || initialData;
+        const diffBase = rawInitialData || initialData;
         const hasChanges = JSON.stringify(diffBase) !== JSON.stringify(finalData);
 
         if (!isNew && !hasChanges) {
              success("No changes detected");
              return;
         }
+
+        (finalData as Record<string, unknown>).last_modified = new Date().toISOString();
         
         // SKIP LOGIC
         if (isNew || skipPreview) {
@@ -91,6 +135,9 @@ export function useDiffLogic<T>(initialData: T | Partial<T> | undefined, rawData
     };
 
     return {
+        isSaving,
+        saveEntity,
+        deleteEntity,
         preview,
         closePreview,
         requestSave

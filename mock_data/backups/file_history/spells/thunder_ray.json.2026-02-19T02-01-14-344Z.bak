@@ -1,0 +1,20 @@
+{
+  "$schema": "../../schemas/v2/spells.schema.json",
+  "entity_id": "thunder_ray",
+  "name": "Thunder Ray",
+  "category": "Spell",
+  "magic_school": "Technomancy",
+  "rank": "I",
+  "description": "Focused beam that deals low Lightning damage.",
+  "image_required": true,
+  "tags": [],
+  "mechanics": {
+    "waves": 5,
+    "interval": 1
+  },
+  "damage": 14,
+  "range": 45,
+  "charges": 1,
+  "recharge_time": 5,
+  "cast_time": 0
+}

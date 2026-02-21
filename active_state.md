@@ -14,9 +14,9 @@
 
 ## Current Status
 
-**Phase:** Phase 11: Schema Alignment Complete
-**Focus:** Maintenance | Enforcing Strict JSON Schemas ✅ Complete
-**Test Coverage:** 397 Tests Passing (Verified)
+**Phase:** Phase 14: v1.0.5 Released
+**Focus:** Released | Code Modernization, Editor Refactoring, Type Safety ✅
+**Test Coverage:** 415 Tests Passing (44 files, Verified)
 
 ## Sources of Truth
 
@@ -112,6 +112,10 @@
 - [x] Ordered JSON Output: Created `sortKeys` utility in `server/utils/jsonUtils.ts`. Integrated into `DataService` and `PatchService`. All entity and patch files now have deterministic key order (`$schema`→`id`→`name`→alpha→`last_modified`→`changelog`). 6 unit tests. TSC clean.
 - [x] Test Suite Cleanup: Fixed 8 pre-existing test failures (path errors, missing imports, schema drift, flaky Windows file locks). Deleted orphaned `changelog_trim.test.ts`. **43/43 files, 394/394 tests green.**
 - [x] Publisher Commit Integration: `publish()`/`publishIfNeeded()` now return written file paths. All 3 git commit flows (`commitPatch`, `quickSave`, `rollbackPatch`) stage changelog/timeline files. Fixed double `.json.json` timeline extension. 3 new regression tests. **43/43 files, 397/397 tests.**
+- [x] Sync Script Safety: Fixed `sync.ts` to properly preserve `patches.json`, `audit.jsonl`, stringently avoid copying live API dirty states during normal syncs, and clear queues and patches only on `--clean`. Added AppSidebar UI tooltip clarification. Passed TSC build.
+- [x] Mobile Responsive Layout: 8 files updated (CSS-only). PreviewPanel full-screen overlay, TableEditor single-col, HistoryGrid wrapped toolbar, compact AppHeader, stacked ScribePanel dialog. 397/397 tests, TSC clean.
+- [x] Network Access: Updated `vite.config.ts` (host: true) and `server/index.ts` (listen 0.0.0.0) to allow local network connections. Server now logs LAN IP on startup.
+- [x] Tooling: Installed dependency-cruiser for dependency analysis & visualization.
 
 ### Planned
 
@@ -137,3 +141,15 @@
 - [x] Hero Abilities Save Fix: Backend TYPE GUARD in `dataService.ts` was reverting `object → array` normalization (e.g., legacy abilities), silently discarding user edits. Fixed to allow known normalization. TSC clean, 4/4 DataService tests.
 - [x] Slim Patch Normalization: `buildSlimChange` in `slimChange.ts` now normalizes legacy Object abilities → Array via `normalizeForDiff` before `deep-diff`. Prevents bloated patches recording entire abilities list. 3 regression tests. TSC clean.
 - [x] Entity Changelog Optimization: `dataService.ts` now trims the per-file `changelog` array to the last 5 entries on save. Full history is preserved in `patches.json`, preventing unbounded growth of entity files. Verified with unit test.
+- [x] MechanicsPanel Comprehensive Update: Added `waves`, `interval`, `capture_speed_modifier`, `stagger_modifier`, `pierce`, `auto_capture_altars` scalar fields and `bonus_damage` array editor. Tests: 4→8. 401/401 tests, TSC clean.
+- [x] HeroAbilitiesPanel Combat Fields: Added `damage`, `duration`, `charges` numeric inputs and collapsible Mechanics section (`cleave` toggle + dynamic `features` list) to each ability card. Fixes Scribe's missing primary damage/knockback/cleave. 401/401 tests, TSC clean.
+- [x] Form Dirty State Fix: `normalizeHero` now initializes `mechanics: { features: [] }` on every ability so form defaults match `useFieldArray` render state. `denormalizeAbilities` strips empty `mechanics.features` and empty `mechanics` to prevent normalization artifacts leaking to disk. Fixes false dirty on Fire Elementalist open and phantom `features: []` mutation on Iron Sorcerer edits. 401/401 tests, TSC clean.
+- [x] Cleanup-11 (cleanup-5): Final audit passed (401 tests, TSC clean, lint 0 errors). Verified form dirty state fixes. README verified.
+- [x] Modernization Audit #4: Generated modernization report focusing on God Objects (ScribePanel), old Promise syntax (.then), and outstanding loose typings (any).
+- [x] Phase 1 Execution (Type Safety & Syntax): Converted `usePatchQueue`, `useEntityData`, `useAppData` to `async/await`. Replaced `any` with strict typing in `diff-utils.ts`, `useEditorActions`, and `useEntitySelection`. 401 tests passed, TSC clean.
+- [x] Phase 2 Execution (ScribePanel Decomposition): Extracted queue and publisher logic into `ScribeQueueView.tsx` and refactored `ScribePanel.tsx` from 417 lines into a thin 70-line orchestrator. TabBar DOM placement preserved for mobile-responsive CSS. 401 tests passed, TSC/Lint clean.
+- [x] Phase 3 Execution (Normalization Consolidation): Centralized inline shape translation logic from `editorConfig.ts` and `diff-utils.ts` into a unified `abilityTransformer.ts` to prevent shotgun surgery bugs. 154 shape-preservation tests cleanly passed ensuring 1:1 save fidelity.
+- [x] Consolidated Data Path: Merged `useEntityMutation` + `useDiffLogic` into single `useDataMutation` hook.
+- [x] Phase 5: Eliminated `no-explicit-any` suppressions (48 instances across 12 files removed).
+- [x] Editor Refactoring: Migrated 5 panels to `useFormContext`, extracted `AbilityItem`/`AbilityFeatures` into `abilities/` subfolder. Removed unused props/imports. 415/415 tests, TSC clean, lint 0 errors.
+- [x] Release v1.0.5: CHANGELOG, version bump, git tag.

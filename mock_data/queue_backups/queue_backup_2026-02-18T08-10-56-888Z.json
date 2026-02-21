@@ -1,0 +1,67 @@
+[
+  {
+    "target_id": "lich.json",
+    "name": "Lich",
+    "field": "entity",
+    "old": {
+      "$schema": "../../schemas/v2/units.schema.json",
+      "entity_id": "lich",
+      "name": "Lich",
+      "category": "Creature",
+      "magic_school": "Necromancy",
+      "rank": "II",
+      "description": "Undead caster that inflicts curses to enemies, increasing the damage they take and reducing their movement speed.",
+      "image_required": true,
+      "tags": [],
+      "changelog": [
+        {
+          "version": "0.0.1",
+          "date": "2026-02-08T09:49:16.841271+00:00",
+          "description": "Initial Closed Beta 2 Data"
+        }
+      ],
+      "damage": 5,
+      "health": 500,
+      "movement_speed": 5,
+      "movement_type": "Flying",
+      "dps": 5,
+      "attack_interval": 1,
+      "charges": 1,
+      "recharge_time": 25,
+      "cast_time": 0,
+      "population": 0
+    },
+    "new": {
+      "entity_id": "lich",
+      "name": "Lich",
+      "category": "Creature",
+      "magic_school": "Necromancy",
+      "rank": "II",
+      "description": "Undead caster that inflicts curses to enemies, increasing the damage they take and reducing their movement speed.",
+      "image_required": true,
+      "tags": [],
+      "health": 500,
+      "damage": 5,
+      "range": 25,
+      "dps": 5,
+      "attack_interval": 1,
+      "movement_speed": 5,
+      "movement_type": "Flying",
+      "charges": 1,
+      "recharge_time": 25,
+      "cast_time": 0,
+      "population": 0,
+      "changelog": [
+        {
+          "version": "0.0.1",
+          "date": "2026-02-08T09:49:16.841271+00:00",
+          "description": "Initial Closed Beta 2 Data"
+        }
+      ],
+      "last_modified": "2026-02-18T08:10:21.047Z",
+      "$schema": "../../schemas/v2/units.schema.json"
+    },
+    "category": "units",
+    "timestamp": "2026-02-18T08:10:21.049Z"
+  }
+]

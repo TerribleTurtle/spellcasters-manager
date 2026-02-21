@@ -1,6 +1,5 @@
 import { UseFormSetError } from 'react-hook-form';
-import { useEntityMutation } from './mutations/useEntityMutation';
-import { useDiffLogic } from './utils/useDiffLogic';
+import { useDataMutation } from './useDataMutation';
 import { useToast } from '@/components/ui/toast-context';
 import { ValidationError } from '@/services/DataService';
 import { flattenFormErrors } from '@/lib/formUtils';
@@ -14,8 +13,7 @@ export interface UseEditorActionsProps<T extends Record<string, unknown>> {
     onSave?: (data?: T, filename?: string) => void;
     onNavigateToScribe?: () => void;
     label?: string; // e.g. "Unit", "Hero", "Item" - defaults to capitalized category
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setError?: UseFormSetError<any>;
+    setError?: UseFormSetError<Record<string, unknown>>;
 }
 
 export function useEditorActions<T extends Record<string, unknown>>({
@@ -33,17 +31,16 @@ export function useEditorActions<T extends Record<string, unknown>>({
     // Determine user-friendly label if not provided
     const entityLabel = label || category.charAt(0).toUpperCase() + category.slice(1, -1); // "units" -> "Unit"
 
-    // 1. Mutation Logic
-    const { isSaving, saveEntity, deleteEntity } = useEntityMutation<T>({
+    // 1. Unified Mutation & Diff Logic
+    const { isSaving, saveEntity, deleteEntity, preview, closePreview, requestSave } = useDataMutation<T>({
         category,
         filename,
         entityLabel,
+        initialData,
+        rawInitialData,
         onSave,
         onNavigateToScribe
     });
-
-    // 2. Diff/Preview Logic — rawInitialData preserves original file structure
-    const { preview, closePreview, requestSave } = useDiffLogic(initialData, rawInitialData);
 
     // 3. Helpers (Validation & Error Handling)
     const handleSaveError = (err: unknown, defaultMessage: string) => {
@@ -60,8 +57,7 @@ export function useEditorActions<T extends Record<string, unknown>>({
     /**
      * Handles client-side Zod validation errors from react-hook-form
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleClientValidation = (errors: any) => {
+    const handleClientValidation = (errors: unknown) => {
         const issues = flattenFormErrors(errors);
 
         if (issues.length > 0) {

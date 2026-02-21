@@ -14,6 +14,7 @@ import { fileService } from './services/fileService.js';
 import { getSchemaForCategory, getRegisteredCategories } from '../src/config/entityRegistry.js';
 import { logger } from './utils/logger.js';
 import fs from 'fs'; // Needed for multer config
+import os from 'os'; // For network interfaces
 
 import { AppError } from './utils/AppError.js';
 
@@ -156,8 +157,19 @@ const validateDataOnBoot = () => {
 };
 
 // --- Start ---
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     logger.info(`[Server] Running on http://localhost:${PORT}`);
+    
+    // Log LAN IP for mobile testing
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name] || []) {
+            if (net.family === 'IPv4' && !net.internal) {
+                logger.info(`[Network] LAN Access: http://${net.address}:${PORT}`);
+            }
+        }
+    }
+
     validateDataOnBoot();
 });
 

@@ -20,6 +20,7 @@ import { useEditorForm } from "@/hooks/useEditorForm";
 import { EditorToolbar } from "./EditorToolbar";
 import { EditorProps, EntityEditorConfig } from "./editorConfig";
 import { schemaToFields } from "@/domain/schemaToFields";
+import { SubmitHandler } from "react-hook-form";
 
 interface GenericEntityEditorProps<T> extends EditorProps {
   config: EntityEditorConfig<T>;
@@ -60,7 +61,7 @@ export function GenericEntityEditor<T extends { id?: string }>({
   const fields = useMemo(() => schemaToFields(config.schema, config.fieldConfig), [config.schema, config.fieldConfig]);
 
   useKeyboardShortcuts({
-      onSave: form.handleSubmit(handleBasicSave, handleClientValidation),
+      onSave: form.handleSubmit(handleBasicSave as SubmitHandler<Record<string, unknown>>, handleClientValidation),
   });
 
   return (
@@ -78,17 +79,15 @@ export function GenericEntityEditor<T extends { id?: string }>({
               generatedFilename={generatedFilename}
               onDuplicate={onDuplicate}
               getValues={form.getValues}
-              onSave={form.handleSubmit(handleBasicSave, handleClientValidation)}
-              onQueue={form.handleSubmit(handleQueueAction, handleClientValidation)}
-              onQuickQueue={form.handleSubmit(handleQuickQueueAction, handleClientValidation)}
+              onSave={form.handleSubmit(handleBasicSave as SubmitHandler<Record<string, unknown>>, handleClientValidation)}
+              onQueue={form.handleSubmit(handleQueueAction as SubmitHandler<Record<string, unknown>>, handleClientValidation)}
+              onQuickQueue={form.handleSubmit(handleQuickQueueAction as SubmitHandler<Record<string, unknown>>, handleClientValidation)}
               onReset={handleReset}
             />
 
              <UnitHeaderPanel 
-                control={form.control}
                 unitName={watchedName}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onIconUpload={(filename) => form.setValue("icon" as any, filename as any)}
+                onIconUpload={(filename) => (form as { setValue: (name: string, value: unknown) => void }).setValue("icon", filename)}
                 onDelete={isNew ? undefined : () => setShowDeleteDialog(true)}
                 displayIcon={displayIcon}
             />
@@ -106,13 +105,12 @@ export function GenericEntityEditor<T extends { id?: string }>({
               <>
                   <TableEditor 
                       fields={fields} 
-                      control={form.control} 
                       initialData={baseData} 
                   />
                   
                   {config.extraPanels?.map((Panel, i) => (
                       <div key={i} className="mt-8">
-                          <Panel control={form.control} initialData={baseData || undefined} />
+                          <Panel initialData={baseData ?? undefined} />
                       </div>
                   ))}
               </>
@@ -120,8 +118,7 @@ export function GenericEntityEditor<T extends { id?: string }>({
               <EntityHistoryPanel
                 entityId={props.filename.replace('.json', '')}
                 onRetcon={(field, oldValue) => {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  form.setValue(field as any, oldValue as any, { shouldDirty: true });
+                  (form as { setValue: (name: string, value: unknown, options?: Record<string, boolean>) => void }).setValue(field, oldValue, { shouldDirty: true });
                   setEditorTab('edit');
                 }}
               />

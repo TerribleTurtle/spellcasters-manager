@@ -5,8 +5,7 @@ import { SpellEditor } from "@/components/editors/SpellEditor";
 import { EditorProps } from "@/components/editors/editorConfig";
 import { EntityCategory } from "@/config/entityRegistry";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyEditorComponent = React.ComponentType<any>;
+type AnyEditorComponent = React.ComponentType<EditorProps>;
 
 export const EDITOR_MAP: Partial<Record<EntityCategory | string, React.ComponentType<EditorProps>>> = {
     'units': UnitEditor as AnyEditorComponent, 'unit': UnitEditor as AnyEditorComponent, 'structure': UnitEditor as AnyEditorComponent, 'titans': UnitEditor as AnyEditorComponent,

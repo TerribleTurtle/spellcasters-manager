@@ -91,8 +91,11 @@ export class DataService {
             body: JSON.stringify(sanitizedData)
         });
     } catch (e) {
-        if (e instanceof HttpError && e.status === 400 && e.body?.fields) {
-            throw new ValidationError("Validation Failed", e.body.fields);
+        if (e instanceof HttpError && e.status === 400) {
+            const body = e.body as Record<string, unknown> | null;
+            if (body && Array.isArray(body.fields)) {
+                throw new ValidationError("Validation Failed", body.fields as FieldError[]);
+            }
         }
         throw e;
     }

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2026-02-20
+
+### Changed
+
+- **Code Modernization (Phases 1–5):** Full codebase modernization arc.
+  - Phase 1: Converted `usePatchQueue`, `useEntityData`, `useAppData` to `async/await`. Replaced `any` with strict typing in `diff-utils.ts`, `useEditorActions`, `useEntitySelection`.
+  - Phase 2: Decomposed `ScribePanel` (417→70 lines) by extracting `ScribeQueueView.tsx`.
+  - Phase 3: Centralized ability normalization into `abilityTransformer.ts` (eliminates shotgun surgery bugs).
+  - Phase 4: Consolidated `useEntityMutation` + `useDiffLogic` into single `useDataMutation` hook.
+  - Phase 5: Eliminated 48 `no-explicit-any` suppressions across 12 files.
+- **Editor Component Refactoring:** Migrated 5 editor panels (`TableEditor`, `GenericEntityEditor`, `TagsPanel`, `UnitHeaderPanel`, `MechanicsPanel`) to `useFormContext` — eliminated prop drilling of `control`.
+- **HeroAbilitiesPanel:** Extracted `AbilityItem` and `AbilityFeatures` into `src/components/editors/panels/abilities/`.
+- **Test Count:** 397→415 tests passing (44 files).
+
+### Fixed
+
+- **Lint:** Removed unused props/imports from `MechanicsPanel`, `TagsPanel` after `useFormContext` migration. 0 errors baseline.
+
 ## [1.0.4] - 2026-02-18
 
 ### Added

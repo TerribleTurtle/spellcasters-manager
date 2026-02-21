@@ -51,7 +51,7 @@ export class PublisherService {
 
         try {
             const writtenFiles: string[] = [];
-            const sanitizedPatches = stripInternalFields(patches);
+            const sanitizedPatches = stripInternalFields(patches) as unknown[];
 
             // ── 1. Paginated Changelog ──────────────────────────────────
             writtenFiles.push(...await this.writeChangelogPages(apiRoot, sanitizedPatches));
@@ -142,16 +142,14 @@ export class PublisherService {
         const timelineDir = path.join(apiRoot, 'timeline');
         await fileService.ensureDir(timelineDir);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const timelineMap: Record<string, any[]> = {};
+        const timelineMap: Record<string, Record<string, unknown>[]> = {};
 
         for (let i = patches.length - 1; i >= 0; i--) {
             const patch = patches[i];
             for (const change of patch.changes) {
                 if (!timelineMap[change.target_id]) timelineMap[change.target_id] = [];
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const exists = timelineMap[change.target_id].find((t: any) => t.version === patch.version);
+                const exists = timelineMap[change.target_id].find((t: Record<string, unknown>) => t.version === patch.version);
                 if (exists) continue;
 
                 // Slim patches: read entity from disk (change.new is not stored)

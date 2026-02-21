@@ -101,7 +101,7 @@ export function HistoryGrid() {
     return (
         <div className="flex flex-col h-full">
             {/* Toolbar */}
-            <div className="flex items-center gap-2 p-2 border-b border-border/40 bg-background/30 backdrop-blur-md sticky top-0 z-10">
+            <div className="flex flex-wrap items-center gap-2 p-2 border-b border-border/40 bg-background/30 backdrop-blur-md sticky top-0 z-10">
                 
                 {/* View Mode Toggle */}
                 <div className="flex bg-muted/50 p-1 rounded-lg">
@@ -125,20 +125,20 @@ export function HistoryGrid() {
                     </button>
                 </div>
 
-                <div className="h-6 w-px bg-border/50 mx-1" />
+                <div className="hidden sm:block h-6 w-px bg-border/50 mx-1" />
 
                 {/* Filters */}
-                <div className="relative flex-1 max-w-xs">
+                <div className="relative flex-1 min-w-[140px] max-w-xs">
                     <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
                     <Input 
                         className="h-9 pl-8 text-xs bg-background/50" 
-                        placeholder="Search entities (e.g. 'Fireball')..." 
+                        placeholder="Search entities..." 
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="hidden sm:flex items-center gap-1">
                     <Input 
                         type="date" 
                         className="h-9 w-32 text-xs bg-background/50" 
@@ -157,7 +157,7 @@ export function HistoryGrid() {
                 </div>
 
                 <Select value={tagFilter} onValueChange={setTagFilter}>
-                    <SelectTrigger className="w-[140px] h-9 text-xs bg-background/50">
+                    <SelectTrigger className="w-[120px] sm:w-[140px] h-9 text-xs bg-background/50">
                         <div className="flex items-center gap-2">
                             <Filter className="w-3.5 h-3.5 text-muted-foreground" />
                             <SelectValue placeholder="Filter Tag" />

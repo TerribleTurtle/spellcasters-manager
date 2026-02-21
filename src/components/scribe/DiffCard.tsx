@@ -157,8 +157,8 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
                 {/* Content */}
                 <div className="flex-1 min-w-0 space-y-3">
                     {/* Header Row */}
-                    <div className="flex items-center justify-between">
-                         <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                         <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                             <span className="font-bold text-sm tracking-tight">{change.name}</span>
                             {/* Category Badge */}
                             {change.category && (
@@ -192,9 +192,9 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleRemoveTag(t)}
-                                            className="h-5 w-5 p-0.5 hover:text-destructive focus-ring rounded-sm -mr-1"
+                                            className="h-6 w-6 p-0.5 hover:text-destructive focus-ring rounded-sm -mr-1"
                                         >
-                                            <X className="w-3 h-3" />
+                                            <X className="w-3.5 h-3.5" />
                                         </Button>
                                      )}
                                  </div>
@@ -241,21 +241,21 @@ export function DiffCard({ change, index, onUpdate, onOpenInEditor, isSelected, 
                                      <Button 
                                         variant="ghost" 
                                         size="xs" 
-                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                                        className="h-8 w-8 p-0 text-muted-foreground hover:text-primary"
                                         title="Open in Editor (Restore Draft)"
                                         onClick={handleOpenEditor}
                                      >
-                                         <Edit2 className="w-3.5 h-3.5" />
+                                         <Edit2 className="w-4 h-4" />
                                      </Button>
                                  )}
                                  <Button 
                                     variant="ghost" 
                                     size="xs" 
-                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                                     title="Remove Change"
                                     onClick={handleRemoveChange}
                                  >
-                                     <Trash2 className="w-3.5 h-3.5" />
+                                     <Trash2 className="w-4 h-4" />
                                  </Button>
                              </div>
                          )}

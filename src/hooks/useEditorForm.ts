@@ -9,8 +9,7 @@ interface UseEditorFormOptions<T> extends EditorProps {
 }
 
 interface UseEditorFormReturn<T> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  form: UseFormReturn<any>;
+  form: UseFormReturn<Record<string, unknown>>;
   baseData: T | null;
   displayIcon: string;
   generatedFilename: string;
@@ -42,10 +41,8 @@ export function useEditorForm<T extends { id?: string }>({
     if (!initialData)
       return { normalizedInitial: null, baseData: null, rawInitialData: null, displayIcon: "" };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let base = { ...initialData } as any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let current = { ...initialData } as any;
+    let base = { ...initialData } as Record<string, unknown>;
+    let current = { ...initialData } as Record<string, unknown>;
 
     // Capture raw state BEFORE normalization (deep clone to freeze it)
     const rawSnapshot = JSON.parse(JSON.stringify(base));
@@ -60,10 +57,9 @@ export function useEditorForm<T extends { id?: string }>({
       current = config.normalize(current);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const category = (initialData as any)._category || config.category;
+    const category = (initialData as Record<string, unknown>)._category || config.category;
     const icon =
-      current.icon || `${category}/${filename.replace(".json", ".png")}`;
+      String(current.icon || `${category}/${filename.replace(".json", ".png")}`);
 
     return {
       normalizedInitial: current as T,
@@ -74,30 +70,28 @@ export function useEditorForm<T extends { id?: string }>({
   }, [initialData, filename, restoredChange, config]);
 
   const form = useForm<T>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(config.schema) as any,
+    resolver: zodResolver(config.schema) as import('react-hook-form').Resolver<T>,
     defaultValues: (normalizedInitial || {
       id: newEntityId,
       ...config.defaultValues,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    }) as any,
+    }) as import('react-hook-form').DefaultValues<T>,
   });
 
   // Re-sync form when initialData changes
   const { reset } = form;
   useEffect(() => {
     if (normalizedInitial) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      reset(normalizedInitial as any);
+      reset(normalizedInitial as import('react-hook-form').DefaultValues<T>);
     }
   }, [normalizedInitial, reset]);
 
   // Debounced dirty check to avoid blocking the render loop on every keystroke
   // We use form.watch with a callback (subscription) instead of a hook (re-render)
-  const dirtyTimer = useRef<NodeJS.Timeout>();
+  const dirtyTimer = useRef<NodeJS.Timeout>(null);
   
   useEffect(() => {
     // Subscribe to all changes
+    // eslint-disable-next-line react-hooks/incompatible-library
     const subscription = form.watch(() => {
       if (dirtyTimer.current) {
         clearTimeout(dirtyTimer.current);
@@ -120,25 +114,23 @@ export function useEditorForm<T extends { id?: string }>({
   const editorActions = useEditorActions({
     category: config.category,
     filename,
-    initialData: baseData || initialData,
+    initialData: (baseData || initialData) as Record<string, unknown> | undefined,
     rawInitialData: rawInitialData || undefined,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onSave: (data?: any, savedFilename?: string) => {
+    onSave: (data?: Record<string, unknown>, savedFilename?: string) => {
       if (data) {
-          form.reset(data);
+          // [FIX] Do NOT reset form here. It causes a race condition with parent re-fetch.
+          // The parent will update initialData -> triggers useEffect -> resets form correctly.
           onDirtyChange?.(false);
       }
       onSave?.(data, savedFilename);
     },
     onNavigateToScribe,
     label: config.label,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setError: form.setError as any,
+    setError: form.setError as unknown as import('react-hook-form').UseFormSetError<Record<string, unknown>>,
   });
 
   // Dynamic filename for creation
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const watchedName = form.watch("name" as any);
+  const watchedName = (form.watch("name" as import("react-hook-form").Path<T>) ?? "") as string;
   const generatedFilename =
     isNew && watchedName
       ? watchedName
@@ -148,20 +140,15 @@ export function useEditorForm<T extends { id?: string }>({
       : filename;
 
   // Pre-bound action handlers
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSaveAction = (data: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    editorActions.handleSave(data, isNew ? generatedFilename : undefined, (config as any).skipDiff);
+  const handleSaveAction = (data: Record<string, unknown>) => {
+    editorActions.handleSave(data, isNew ? generatedFilename : undefined, (config as unknown as Record<string, unknown>).skipDiff as boolean);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleQueueAction = (data: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    editorActions.handleAddToQueue(data, isNew ? generatedFilename : undefined, (config as any).skipDiff);
+  const handleQueueAction = (data: Record<string, unknown>) => {
+    editorActions.handleAddToQueue(data, isNew ? generatedFilename : undefined, (config as unknown as Record<string, unknown>).skipDiff as boolean);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleQuickQueueAction = (data: any) => {
+  const handleQuickQueueAction = (data: Record<string, unknown>) => {
     // Force skipPreview = true
     editorActions.handleAddToQueue(data, isNew ? generatedFilename : undefined, true);
   };
@@ -178,8 +165,7 @@ export function useEditorForm<T extends { id?: string }>({
 
 
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    form: form as any,
+    form: form as unknown as UseFormReturn<Record<string, unknown>>,
     baseData,
     displayIcon,
     generatedFilename,

@@ -61,8 +61,7 @@ export class PatchService {
       });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getHistory(filters?: { tag?: string; entity?: string; flat?: boolean; from?: string; to?: string }): Promise<Patch[] | any[]> {
+  async getHistory(filters?: { tag?: string; entity?: string; flat?: boolean; from?: string; to?: string }): Promise<Patch[] | Record<string, unknown>[]> {
       const query = new URLSearchParams();
       if (filters?.tag) query.append('tag', filters.tag);
       if (filters?.entity) query.append('entity', filters.entity);
@@ -70,8 +69,7 @@ export class PatchService {
       if (filters?.from) query.append('from', filters.from);
       if (filters?.to) query.append('to', filters.to);
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return httpClient.request<Patch[] | any[]>(`/api/patches/history${query.toString() ? '?' + query.toString() : ''}`);
+      return httpClient.request<Patch[] | Record<string, unknown>[]>(`/api/patches/history${query.toString() ? '?' + query.toString() : ''}`);
   }
 }
 

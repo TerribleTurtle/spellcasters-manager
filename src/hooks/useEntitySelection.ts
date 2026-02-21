@@ -25,9 +25,7 @@ export function useEntitySelection({
     fetchQueue
 }: UseEntitySelectionProps) {
     const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
-    // Manual override for unitData (used during duplication when data isn't in registry)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [unitDataOverride, setUnitDataOverride] = useState<any | null>(null);
+    const [unitDataOverride, setUnitDataOverride] = useState<BaseEntity | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [restoredChange, setRestoredChange] = useState<Change | null>(null);
@@ -67,8 +65,7 @@ export function useEntitySelection({
         });
     }, [handleNavigation]);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleDuplicate = useCallback((data: any) => {
+    const handleDuplicate = useCallback((data: BaseEntity) => {
         handleNavigation(() => {
             setSelectedUnit(null);
             const cloned = JSON.parse(JSON.stringify(data));
@@ -121,8 +118,7 @@ export function useEntitySelection({
         // Fallback: Name lookup (if ID missing)
         if (!rawId && change.name) {
           for (const entities of Object.values(registry)) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const match = entities.find((e: any) => e.name === change.name);
+            const match = entities.find((e) => e.name === change.name);
             if (match?._filename) {
               rawId = match._filename;
               break;

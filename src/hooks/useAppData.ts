@@ -12,14 +12,14 @@ export function useAppData(currentCategory: string) {
     // const [items, setItems] = useState<EntityListHash[]>([]);
     const { error } = useToast();
 
-    const checkHealth = useCallback(() => {
-        httpClient.request<{ status: string; dataDir: string; liveAvailable?: boolean }>(`/api/health`)
-        .then(() => {
+    const checkHealth = useCallback(async () => {
+        try {
+            await httpClient.request<{ status: string; dataDir: string; liveAvailable?: boolean }>(`/api/health`);
             // Healthy
-        })
-        .catch((err: Error) => {
-          error(`Health Check Failed: ${err.message}`);
-        });
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            error(`Health Check Failed: ${errorMsg}`);
+        }
     }, [error]);
 
     // Initial Load

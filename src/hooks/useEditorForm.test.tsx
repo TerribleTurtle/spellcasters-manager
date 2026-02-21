@@ -127,7 +127,7 @@ describe('useEditorForm Dirty State', () => {
 
         // 1. Change deep value
         act(() => {
-            result.current.form.setValue('stats.health', 50);
+            (result.current.form as { setValue: (name: string, value: unknown) => void }).setValue('stats.health', 50);
             vi.advanceTimersByTime(300);
         });
         expect(onDirtyChange).toHaveBeenLastCalledWith(true);

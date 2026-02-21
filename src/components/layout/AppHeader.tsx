@@ -10,13 +10,18 @@ interface AppHeaderProps {
 
 export function AppHeader({ view, filename, onToggleSidebar }: AppHeaderProps) {
     return (
-        <header className="h-16 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6">
+        <header className="h-14 md:h-16 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 md:px-6">
             
             {/* Left: Breadcrumbs & Sidebar Toggle */}
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="md:hidden" onClick={onToggleSidebar}>
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                <Button variant="ghost" size="icon" className="md:hidden shrink-0" onClick={onToggleSidebar}>
                     <Menu className="w-5 h-5" />
                 </Button>
+
+                {/* Mobile: compact label */}
+                <span className="md:hidden text-sm font-semibold truncate">
+                    {view === 'scribe' ? 'Patch Manager' : filename ? filename.replace('.json', '') : 'Studio'}
+                </span>
 
                 <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
                   <Home className="w-4 h-4 text-muted-foreground/70" />

@@ -1,7 +1,8 @@
-import { ZodObject } from "zod";
+import { ZodObject, ZodTypeAny } from "zod";
 import { SchemaFieldsConfig, UNIT_FIELD_CONFIG, HERO_FIELD_CONFIG, CONSUMABLE_FIELD_CONFIG, SPELL_FIELD_CONFIG } from "@/domain/schemaToFields";
 import { UnitSchema, HeroSchema, ConsumableSchema, SpellSchema } from "@/domain/schemas";
-import { Control } from "react-hook-form";
+import { abilitiesToArrayFormat } from "@/domain/abilityTransformer";
+
 import { HeroAbilitiesPanel } from "./panels/HeroAbilitiesPanel";
 import { MechanicsPanel } from "./panels/MechanicsPanel";
 import { TagsPanel } from "./panels/TagsPanel";
@@ -15,66 +16,50 @@ export interface EditorProps {
   onNavigateToScribe?: () => void;
   onDirtyChange?: (dirty: boolean) => void;
   isNew?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onDuplicate?: (data: any) => void;
+  onDuplicate?: (data: unknown) => void;
   restoredChange?: Change | null;
   onDiscardRestoredChange?: () => void;
 }
 
 export interface EntityEditorConfig<T> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  schema: ZodObject<any>;
+  schema: ZodObject<Record<string, ZodTypeAny>>;
   fieldConfig: SchemaFieldsConfig;
   category: string;
   label: string;
   defaultValues: Partial<T>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  normalize?: (data: any) => T;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  extraPanels?: React.ComponentType<{ control: Control<any>; initialData?: T }>[];
+  normalize?: (data: Record<string, unknown>) => T;
+  extraPanels?: React.ComponentType<{ initialData?: T }>[];
 }
 
 // --- Normalization Logic ---
 
 type HeroFormValues = z.infer<typeof HeroSchema>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const normalizeHero = (data: any): HeroFormValues => {
+const normalizeHero = (data: Record<string, unknown>): HeroFormValues => {
     // 1. Normalize Class
     if (data.class && !data.hero_class) {
       data.hero_class = data.class;
     }
 
     // 2. Normalize Abilities (Object -> Array)
-    if (data.abilities && !Array.isArray(data.abilities)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rawAbilities = data.abilities as any;
-      const normalizedAbilities: HeroFormValues['abilities'] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const add = (def: any, type: string) => {
-        if (!def) return;
-        normalizedAbilities.push({
-          ...def,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          type: type as any,
-          mana_cost: def.mana_cost || 0,
-          cooldown: def.cooldown || 0
-        });
-      };
-      if (Array.isArray(rawAbilities.passive)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        rawAbilities.passive.forEach((p: any) => add(p, 'Passive'));
-      }
-      add(rawAbilities.primary, 'Primary');
-      add(rawAbilities.defense, 'Defense');
-      add(rawAbilities.ultimate, 'Ultimate');
-      data.abilities = normalizedAbilities;
+    data.abilities = abilitiesToArrayFormat(data.abilities);
+
+    // 3. Ensure every ability has mechanics.features initialised.
+    //    useFieldArray for mechanics.features will inject an empty [] into
+    //    the form state at render time.  If the normalised defaults don't
+    //    already contain it, the dirty-check sees a diff and falsely marks
+    //    the form as modified (Bug: Fire Elementalist false dirty on open,
+    //    Iron Sorcerer phantom features mutation).
+    if (Array.isArray(data.abilities)) {
+      data.abilities = (data.abilities as Record<string, unknown>[]).map((a: Record<string, unknown>) => ({
+        ...a,
+        mechanics: {
+          features: [],
+          ...(a.mechanics || {}),
+        },
+      }));
     }
 
-    // Ensure abilities is an array (fallback)
-    if (!data.abilities) {
-      data.abilities = [];
-    }
     return data as HeroFormValues;
 };
 

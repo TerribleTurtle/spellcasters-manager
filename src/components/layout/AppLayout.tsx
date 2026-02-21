@@ -90,7 +90,7 @@ export function AppLayout({
              />
 
              <main className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar p-0">
-                <div className="container max-w-7xl mx-auto p-6 md:p-10 min-h-full animate-in fade-in duration-500 slide-in-from-bottom-2">
+                <div className="container max-w-7xl mx-auto p-3 sm:p-6 md:p-10 min-h-full animate-in fade-in duration-500 slide-in-from-bottom-2">
                     {children}
                 </div>
              </main>

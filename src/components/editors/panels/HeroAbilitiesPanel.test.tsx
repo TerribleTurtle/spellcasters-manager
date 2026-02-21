@@ -19,7 +19,7 @@ describe('HeroAbilitiesPanel Refactor Tests', () => {
         return (
             <FormProvider {...methods}>
                 <form>
-                     <HeroAbilitiesPanel control={methods.control} />
+                     <HeroAbilitiesPanel control={methods.control as any} />
                 </form>
             </FormProvider>
         );

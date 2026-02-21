@@ -1,0 +1,96 @@
+[
+  {
+    "target_id": "earthquake.json",
+    "name": "Earthquake",
+    "field": "entity",
+    "old": {
+      "$schema": "../../schemas/v2/spells.schema.json",
+      "entity_id": "earthquake",
+      "name": "Earthquake",
+      "category": "Spell",
+      "magic_school": "Wild",
+      "rank": "III",
+      "description": "Ground shockwave that damages structures and staggers creatures significantly. Damage is split into 3 waves.",
+      "image_required": true,
+      "tags": [],
+      "damage": 76,
+      "mechanics": {
+        "waves": 3,
+        "stagger_modifier": true,
+        "damage_modifiers": [
+          {
+            "multiplier": 0,
+            "target_types": [
+              "Flying"
+            ]
+          },
+          {
+            "multiplier": 1.3,
+            "target_types": [
+              "Building"
+            ]
+          }
+        ],
+        "bonus_damage": [
+          {
+            "unit": "percent_max_hp",
+            "value": 0.3,
+            "target_types": [
+              "Building"
+            ]
+          }
+        ]
+      },
+      "range": 35,
+      "charges": 1,
+      "recharge_time": 50,
+      "cast_time": 0
+    },
+    "new": {
+      "entity_id": "earthquake",
+      "name": "Earthquake",
+      "description": "Ground shockwave that damages structures and staggers creatures significantly. Damage is split into 3 waves.",
+      "category": "Spell",
+      "image_required": true,
+      "tags": [],
+      "mechanics": {
+        "waves": 3,
+        "stagger_modifier": true,
+        "damage_modifiers": [
+          {
+            "multiplier": 0,
+            "target_types": [
+              "Flying"
+            ]
+          },
+          {
+            "multiplier": 1.3,
+            "target_types": [
+              "Building"
+            ]
+          }
+        ],
+        "bonus_damage": [
+          {
+            "unit": "percent_max_hp",
+            "value": 1.3,
+            "target_types": [
+              "Building"
+            ]
+          }
+        ]
+      },
+      "last_modified": "2026-02-19T00:40:45.876Z",
+      "$schema": "../../schemas/v2/spells.schema.json",
+      "magic_school": "Wild",
+      "rank": "III",
+      "damage": 76,
+      "range": 35,
+      "charges": 1,
+      "recharge_time": 50,
+      "cast_time": 0
+    },
+    "category": "spells",
+    "timestamp": "2026-02-19T00:40:45.877Z"
+  }
+]

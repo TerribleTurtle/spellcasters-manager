@@ -20,8 +20,7 @@ export interface SchemaFieldsConfig {
  */
 function unwrap(schema: ZodTypeAny): ZodTypeAny {
   if (schema instanceof ZodOptional || schema instanceof ZodDefault) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return unwrap((schema as any)._def.innerType);
+    return unwrap((schema as ZodOptional<ZodTypeAny> | ZodDefault<ZodTypeAny>)._def.innerType);
   }
   return schema;
 }
@@ -33,20 +32,17 @@ function extractNumberConstraints(schema: ZodNumber): { min?: number; max?: numb
   const result: { min?: number; max?: number; step?: number } = {};
   
   // Zod 4 direct properties
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const anySchema = schema as any;
-  if (anySchema.minValue !== undefined && anySchema.minValue !== null) result.min = anySchema.minValue;
-  if (anySchema.maxValue !== undefined && anySchema.maxValue !== null) result.max = anySchema.maxValue;
-  if (anySchema.step !== undefined && typeof anySchema.step !== 'function') result.step = anySchema.step;
+  const unknownSchema = schema as unknown as Record<string, unknown>;
+  if (unknownSchema.minValue !== undefined && unknownSchema.minValue !== null) result.min = unknownSchema.minValue as number;
+  if (unknownSchema.maxValue !== undefined && unknownSchema.maxValue !== null) result.max = unknownSchema.maxValue as number;
+  if (unknownSchema.step !== undefined && typeof unknownSchema.step !== 'function') result.step = unknownSchema.step as number;
 
   // Zod 3 fallback (checks array)
   for (const check of (schema._def.checks || [])) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((check as any).kind === 'min') result.min = (check as any).value;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((check as any).kind === 'max') result.max = (check as any).value;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((check as any).kind === 'multipleOf') result.step = (check as any).value;
+    const unknownCheck = check as unknown as Record<string, unknown>;
+    if (unknownCheck.kind === 'min') result.min = unknownCheck.value as number;
+    if (unknownCheck.kind === 'max') result.max = unknownCheck.value as number;
+    if (unknownCheck.kind === 'multipleOf') result.step = unknownCheck.value as number;
   }
   return result;
 }
@@ -80,8 +76,7 @@ function fieldNameToLabel(name: string): string {
  * - `z.array/record`  → excluded (complex types handled elsewhere)
  */
 export function schemaToFields(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  schema: ZodObject<any>,
+  schema: ZodObject<Record<string, ZodTypeAny>>,
   config: SchemaFieldsConfig = {}
 ): EditorField[] {
   const { exclude = [], labels = {}, descriptions = {}, order = [] } = config;

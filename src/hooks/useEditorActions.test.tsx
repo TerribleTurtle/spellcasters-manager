@@ -7,13 +7,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ValidationError } from '@/services/DataService';
 
 // Mock Dependencies
-const { mockMutation, mockDiffLogic, mockToast } = vi.hoisted(() => ({
-    mockMutation: {
+const { mockDataMutation, mockToast } = vi.hoisted(() => ({
+    mockDataMutation: {
         saveEntity: vi.fn(),
         deleteEntity: vi.fn(),
-        isSaving: false
-    },
-    mockDiffLogic: {
+        isSaving: false,
         preview: null,
         closePreview: vi.fn(),
         requestSave: vi.fn()
@@ -21,12 +19,8 @@ const { mockMutation, mockDiffLogic, mockToast } = vi.hoisted(() => ({
     mockToast: { error: vi.fn() }
 }));
 
-vi.mock('./mutations/useEntityMutation', () => ({
-    useEntityMutation: () => mockMutation
-}));
-
-vi.mock('./utils/useDiffLogic', () => ({
-    useDiffLogic: () => mockDiffLogic
+vi.mock('./useDataMutation', () => ({
+    useDataMutation: () => mockDataMutation
 }));
 
 vi.mock('@/components/ui/toast-context', () => ({
@@ -37,7 +31,7 @@ describe('useEditorActions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default requestSave implementation: executes the callback immediately
-        mockDiffLogic.requestSave.mockImplementation((_mode, data, callback) => callback(data));
+        mockDataMutation.requestSave.mockImplementation((_mode, data, callback) => callback(data));
     });
 
     it('handleSave calls requestSave then saveEntity', async () => {
@@ -51,8 +45,8 @@ describe('useEditorActions', () => {
             result.current.handleSave({ name: 'Test' });
         });
 
-        expect(mockDiffLogic.requestSave).toHaveBeenCalledWith('silent', { name: 'Test' }, expect.any(Function), false);
-        expect(mockMutation.saveEntity).toHaveBeenCalledWith({ name: 'Test' }, false, undefined);
+        expect(mockDataMutation.requestSave).toHaveBeenCalledWith('silent', { name: 'Test' }, expect.any(Function), false);
+        expect(mockDataMutation.saveEntity).toHaveBeenCalledWith({ name: 'Test' }, false, undefined);
     });
 
     it('handleAddToQueue calls requestSave then saveEntity with queue=true', async () => {
@@ -66,8 +60,8 @@ describe('useEditorActions', () => {
             result.current.handleAddToQueue({ name: 'Test' });
         });
 
-        expect(mockDiffLogic.requestSave).toHaveBeenCalledWith('queue', { name: 'Test' }, expect.any(Function), false);
-        expect(mockMutation.saveEntity).toHaveBeenCalledWith({ name: 'Test' }, true, undefined);
+        expect(mockDataMutation.requestSave).toHaveBeenCalledWith('queue', { name: 'Test' }, expect.any(Function), false);
+        expect(mockDataMutation.saveEntity).toHaveBeenCalledWith({ name: 'Test' }, true, undefined);
     });
 
     it('maps ValidationError to setError', async () => {
@@ -76,7 +70,7 @@ describe('useEditorActions', () => {
             { path: 'stats.health', message: 'Too low' }
         ]);
 
-        mockMutation.saveEntity.mockRejectedValue(validationError);
+        mockDataMutation.saveEntity.mockRejectedValue(validationError);
 
         const { result } = renderHook(() => useEditorActions({
             category: 'units',
@@ -94,7 +88,7 @@ describe('useEditorActions', () => {
     });
 
     it('handles generic save errors', async () => {
-        mockMutation.saveEntity.mockRejectedValue(new Error('Network Error'));
+        mockDataMutation.saveEntity.mockRejectedValue(new Error('Network Error'));
 
         const { result } = renderHook(() => useEditorActions({
             category: 'units',
@@ -121,6 +115,6 @@ describe('useEditorActions', () => {
             await result.current.handleDelete(onSuccess);
         });
 
-        expect(mockMutation.deleteEntity).toHaveBeenCalledWith(onSuccess);
+        expect(mockDataMutation.deleteEntity).toHaveBeenCalledWith(onSuccess);
     });
 });

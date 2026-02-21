@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/toast-context"
+
 import { cn } from "@/lib/utils"
 
 
@@ -8,14 +8,10 @@ import { Book, Hammer, Sword, Scroll, Globe, PawPrint, Castle, FlaskConical, Plu
 import { EntityList } from "../grimoire/EntityList"
 import { EntityListHash } from "@/types";
 import { AppView } from "@/types";
-import { httpClient } from "@/lib/httpClient";
 
-interface DevConfig {
-    dataDir: string;
-    label: 'live' | 'mock';
-    livePath: string;
-    mockPath: string;
-}
+
+import { useDevSync } from "@/hooks/useDevSync";
+import { useDataExport } from "@/hooks/useDataExport";
 
 interface AppSidebarProps {
     view: AppView;
@@ -44,136 +40,8 @@ export function AppSidebar({
     onCreate,
     onRefresh
 }: AppSidebarProps) {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const { success, error } = useToast();
-
-    // ── Dev Config State ──
-    const [devConfig, setDevConfig] = useState<DevConfig | null>(null);
-    const [devLoading, setDevLoading] = useState<string | null>(null); // null | 'switch' | 'sync' | 'wipe'
-
-    const fetchDevConfig = useCallback(async () => {
-        try {
-            const cfg = await httpClient.request<DevConfig>('/api/dev/config');
-            setDevConfig(cfg);
-        } catch {
-            // Server might be restarting, ignore
-        }
-    }, []);
-
-    useEffect(() => { 
-        // Defer fetch to avoid synchronous setState warning
-        const t = setTimeout(() => void fetchDevConfig(), 0);
-        return () => clearTimeout(t);
-    }, [fetchDevConfig]);
-
-    const pollUntilReady = useCallback(async () => {
-        const maxAttempts = 30;
-        for (let i = 0; i < maxAttempts; i++) {
-            await new Promise(r => setTimeout(r, 1500));
-            try {
-                await httpClient.request('/api/health');
-                return true;
-            } catch {
-                // still down
-            }
-        }
-        return false;
-    }, []);
-
-    const handleSwitchPath = async () => {
-        if (!devConfig) return;
-        const target = devConfig.label === 'live' ? 'mock' : 'live';
-        setDevLoading('switch');
-        try {
-            await httpClient.request('/api/dev/switch-path', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target })
-            });
-            success(`Switching to ${target}… restarting server`);
-            // Server will restart — poll until it's back
-            await pollUntilReady();
-            window.location.reload();
-        } catch (err) {
-            error('Switch failed: ' + (err as Error).message);
-            setDevLoading(null);
-        }
-    };
-
-    const handleSync = async () => {
-        setDevLoading('sync');
-        try {
-            await httpClient.request('/api/dev/sync', { method: 'POST' });
-            success('Sync complete! Reloading…');
-            onRefresh();
-            setDevLoading(null);
-            await fetchDevConfig();
-        } catch (err) {
-            error('Sync failed: ' + (err as Error).message);
-            setDevLoading(null);
-        }
-    };
-
-    const handleWipeAndCopy = async () => {
-        setDevLoading('wipe');
-        try {
-            await httpClient.request('/api/dev/sync?clean=true', { method: 'POST' });
-            success('Wipe & Copy complete! Reloading…');
-            onRefresh();
-            setDevLoading(null);
-            await fetchDevConfig();
-        } catch (err) {
-            error('Wipe & Copy failed: ' + (err as Error).message);
-            setDevLoading(null);
-        }
-    };
-
-    const handleExport = async () => {
-        try {
-            // Initiate download
-            // We use direct window.location for GET download or fetch blob
-            const response = await httpClient.request('/api/data/export');
-            // Assuming httpClient returns JSON response with data... wait, export endpoint returns JSON.
-            // We want to download it as a file.
-            // If we use httpClient, we get the object. We need to blob it.
-            
-            const blob = new Blob([JSON.stringify(response, null, 2)], { type: 'application/json' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch {
-            error("Export Failed");
-        }
-    };
-
-    const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const json = JSON.parse(e.target?.result as string);
-                await httpClient.request('/api/data/import', {
-                    method: 'POST',
-                    body: json
-                });
-                success("Import Successful! Reloading...");
-                setTimeout(() => window.location.reload(), 1000);
-            } catch (err) {
-                error("Import Failed: " + (err as Error).message);
-            }
-        };
-        reader.readAsText(file);
-        
-        // Reset input
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
+    const { devConfig, devLoading, handleSwitchPath, handleSync, handleWipeAndCopy } = useDevSync(onRefresh);
+    const { fileInputRef, handleExport, handleImport } = useDataExport();
 
     return (
         <aside className={cn("border-r border-border bg-card/30 flex flex-col backdrop-blur-xl h-full", className)}>
@@ -200,58 +68,58 @@ export function AppSidebar({
                     <Button 
                         variant={currentCategory === 'all' ? 'secondary' : 'ghost'} 
                         size="sm" 
-                        className={cn("h-8", currentCategory === 'all' && "bg-background shadow-sm")}
+                        className={cn("h-10", currentCategory === 'all' && "bg-background shadow-sm")}
                         onClick={() => onSelectCategory('all')}
                         title="All"
                     >
-                        <Globe className="w-4 h-4" />
+                        <Globe className="w-5 h-5" />
                     </Button>
                     <Button 
                         variant={currentCategory === 'hero' ? 'secondary' : 'ghost'} 
                         size="sm" 
-                        className={cn("h-8", currentCategory === 'hero' && "bg-background shadow-sm")}
+                        className={cn("h-10", currentCategory === 'hero' && "bg-background shadow-sm")}
                         onClick={() => onSelectCategory('hero')}
                         title="Spellcasters"
                     >
-                        <Sword className="w-4 h-4" />
+                        <Sword className="w-5 h-5" />
                     </Button>
                     <Button 
                         variant={currentCategory === 'unit' ? 'secondary' : 'ghost'} 
                         size="sm" 
-                        className={cn("h-8", currentCategory === 'unit' && "bg-background shadow-sm")}
+                        className={cn("h-10", currentCategory === 'unit' && "bg-background shadow-sm")}
                         onClick={() => onSelectCategory('unit')}
                         title="Creatures"
                     >
-                        <PawPrint className="w-4 h-4" />
+                        <PawPrint className="w-5 h-5" />
                     </Button>
 
                     {/* Row 2 */}
                     <Button 
                         variant={currentCategory === 'structure' ? 'secondary' : 'ghost'} 
                         size="sm" 
-                        className={cn("h-8", currentCategory === 'structure' && "bg-background shadow-sm")}
+                        className={cn("h-10", currentCategory === 'structure' && "bg-background shadow-sm")}
                         onClick={() => onSelectCategory('structure')}
                         title="Buildings"
                     >
-                        <Castle className="w-4 h-4" />
+                        <Castle className="w-5 h-5" />
                     </Button>
                     <Button 
                         variant={currentCategory === 'spell' ? 'secondary' : 'ghost'} 
                         size="sm" 
-                        className={cn("h-8", currentCategory === 'spell' && "bg-background shadow-sm")}
+                        className={cn("h-10", currentCategory === 'spell' && "bg-background shadow-sm")}
                         onClick={() => onSelectCategory('spell')}
                         title="Spells"
                     >
-                        <Scroll className="w-4 h-4" />
+                        <Scroll className="w-5 h-5" />
                     </Button>
                     <Button 
                         variant={currentCategory === 'consumable' ? 'secondary' : 'ghost'} 
                         size="sm" 
-                        className={cn("h-8", currentCategory === 'consumable' && "bg-background shadow-sm")}
+                        className={cn("h-10", currentCategory === 'consumable' && "bg-background shadow-sm")}
                         onClick={() => onSelectCategory('consumable')}
                         title="Consumables"
                     >
-                        <FlaskConical className="w-4 h-4" />
+                        <FlaskConical className="w-5 h-5" />
                     </Button>
                  </div>
                  <div className="text-center text-mini text-muted-foreground uppercase tracking-widest font-medium py-1">
@@ -389,7 +257,7 @@ export function AppSidebar({
                             className="text-[10px] h-7 bg-background/50 hover:bg-background border-destructive/20 hover:border-destructive/50 hover:text-destructive"
                             onClick={handleWipeAndCopy}
                             disabled={!!devLoading}
-                            title="Wipe mock_data & fresh copy from live (clears queue)"
+                            title="Wipe mock_data & fresh copy from live (clears queue & patches)"
                         >
                             {devLoading === 'wipe' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3 mr-1" />}
                             {devLoading !== 'wipe' && 'Wipe'}

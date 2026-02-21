@@ -18,7 +18,7 @@ describe('TagsPanel Tests', () => {
         return (
             <FormProvider {...methods}>
                 <form>
-                     <TagsPanel control={methods.control} />
+                     <TagsPanel />
                 </form>
             </FormProvider>
         );

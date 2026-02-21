@@ -132,7 +132,7 @@ function App() {
                         isCreating={isCreating}
                         onCreateStart={handleCreateStart}
                         onCreateCancel={handleCreateCancel}
-                        onDuplicate={handleDuplicate}
+                        onDuplicate={handleDuplicate as (data: unknown) => void}
                     />
                 </div>
             ) : view === 'scribe' ? (

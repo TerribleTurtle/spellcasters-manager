@@ -14,14 +14,21 @@ describe('MechanicsPanel Tests', () => {
         const methods = useForm({
             defaultValues: {
                 mechanics: {
-                    damage_modifiers: []
+                    damage_modifiers: [] as any[],
+                    bonus_damage: [] as any[],
+                    waves: undefined,
+                    interval: undefined,
+                    stagger_modifier: undefined,
+                    pierce: undefined,
+                    auto_capture_altars: undefined,
+                    capture_speed_modifier: undefined,
                 }
             }
         });
         return (
             <FormProvider {...methods}>
                 <form>
-                     <MechanicsPanel control={methods.control} />
+                     <MechanicsPanel />
                 </form>
             </FormProvider>
         );
@@ -39,7 +46,7 @@ describe('MechanicsPanel Tests', () => {
         
         // Add button should be visible after expand
         expect(screen.getByText('Add Modifier')).toBeInTheDocument();
-        expect(screen.getByText('No mechanics added yet.')).toBeInTheDocument();
+        expect(screen.getByText('No damage modifiers.')).toBeInTheDocument();
     });
 
     it('adds and removes modifiers', () => {
@@ -64,7 +71,7 @@ describe('MechanicsPanel Tests', () => {
         fireEvent.click(deleteButtons[0]);
 
         // Should be empty again
-        expect(screen.getByText('No mechanics added yet.')).toBeInTheDocument();
+        expect(screen.getByText('No damage modifiers.')).toBeInTheDocument();
     });
 
     it('updates multiplier', () => {
@@ -102,5 +109,59 @@ describe('MechanicsPanel Tests', () => {
         fireEvent.click(creatureCheckbox);
         expect(creatureCheckbox).not.toBeChecked();
         expect(buildingCheckbox).toBeChecked();
+    });
+
+    // --- New tests for the added fields ---
+
+    it('renders scalar fields when expanded', () => {
+        render(<Wrapper />);
+        fireEvent.click(screen.getByText(/Mechanics/i));
+
+        expect(screen.getByLabelText('Waves')).toBeInTheDocument();
+        expect(screen.getByLabelText('Interval (s)')).toBeInTheDocument();
+        expect(screen.getByLabelText('Capture Speed (x)')).toBeInTheDocument();
+        expect(screen.getByLabelText('Stagger')).toBeInTheDocument();
+        expect(screen.getByLabelText('Pierce')).toBeInTheDocument();
+        expect(screen.getByLabelText('Auto Capture Altars')).toBeInTheDocument();
+    });
+
+    it('updates waves field', () => {
+        render(<Wrapper />);
+        fireEvent.click(screen.getByText(/Mechanics/i));
+
+        const wavesInput = screen.getByLabelText('Waves') as HTMLInputElement;
+        fireEvent.change(wavesInput, { target: { value: '3' } });
+        expect(wavesInput.value).toBe('3');
+    });
+
+    it('toggles stagger modifier', () => {
+        render(<Wrapper />);
+        fireEvent.click(screen.getByText(/Mechanics/i));
+
+        const staggerCheckbox = screen.getByLabelText('Stagger');
+        expect(staggerCheckbox).not.toBeChecked();
+
+        fireEvent.click(staggerCheckbox);
+        expect(staggerCheckbox).toBeChecked();
+    });
+
+    it('adds and removes bonus damage', () => {
+        render(<Wrapper />);
+        fireEvent.click(screen.getByText(/Mechanics/i));
+
+        // Initially empty
+        expect(screen.getByText('No bonus damage.')).toBeInTheDocument();
+
+        // Add bonus
+        fireEvent.click(screen.getByText('Add Bonus'));
+        // 'Bonus Damage' appears as section header AND card header
+        expect(screen.getAllByText('Bonus Damage').length).toBeGreaterThanOrEqual(2);
+        expect(screen.getByLabelText('Value')).toBeInTheDocument();
+        expect(screen.getByLabelText('Unit')).toBeInTheDocument();
+
+        // Remove
+        const deleteButtons = screen.getAllByRole('button').filter(b => b.querySelector('svg.lucide-trash-2'));
+        fireEvent.click(deleteButtons[0]);
+        expect(screen.getByText('No bonus damage.')).toBeInTheDocument();
     });
 });

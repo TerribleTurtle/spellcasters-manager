@@ -1,13 +1,14 @@
-import { Control } from "react-hook-form";
+
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { VisualAssetHelpers } from "../VisualAssetHelpers";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
-import { FieldValues } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 
-export function UnitHeaderPanel({ control, onIconUpload, unitName, onDelete, displayIcon }: { control: Control<FieldValues>, onIconUpload: (f:string)=>void, unitName: string, onDelete?: () => void, displayIcon?: string }) {
+export function UnitHeaderPanel({ onIconUpload, unitName, onDelete, displayIcon }: { onIconUpload: (f:string)=>void, unitName: string, onDelete?: () => void, displayIcon?: string }) {
+  const { control } = useFormContext();
   return (
     <div className="flex items-center gap-4 p-4 border border-border/50 rounded-lg bg-card/40 backdrop-blur-sm shadow-sm mb-4">
        

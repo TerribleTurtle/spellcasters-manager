@@ -1,23 +1,25 @@
 {
-  "$schema": "../../schemas/v2/heroes.schema.json",
   "entity_id": "astral_monk",
   "name": "Astral Monk",
-  "class": "Duelist",
   "category": "Spellcaster",
+  "description": "A Duelist who strikes from the shadows with fast astral fists and time-bending abilities.",
+  "image_required": true,
+  "tags": [],
+  "health": 300,
+  "movement_type": "Ground",
+  "population": 0,
+  "changelog": [
+    {
+      "version": "0.0.1",
+      "date": "2026-02-05T18:34:05.939129Z",
+      "description": "Initial Closed Beta 2 Data"
+    }
+  ],
+  "last_modified": "2026-02-18T00:28:56.582Z",
+  "$schema": "../../schemas/v2/heroes.schema.json",
+  "class": "Duelist",
+  "difficulty": 3,
   "abilities": {
-    "defense": {
-      "name": "Veil Shift",
-      "charges": 2,
-      "cooldown": 10,
-      "description": "Turns invisible and move faster.",
-      "duration": 1.5,
-      "mechanics": {
-        "stealth": {
-          "break_on_attack": true,
-          "duration": 1.5
-        }
-      }
-    },
     "passive": [
       {
         "name": "Arcane Alignment",
@@ -34,8 +36,8 @@
     ],
     "primary": {
       "name": "Astral Fists",
-      "damage": 32,
       "description": "Pierces through enemies with colossal astral fists.",
+      "damage": 32,
       "mechanics": {
         "features": [
           {
@@ -46,17 +48,22 @@
         "pierce": true
       }
     },
+    "defense": {
+      "name": "Veil Shift",
+      "description": "Turns invisible and move faster.",
+      "charges": 2,
+      "duration": 1.5,
+      "cooldown": 8,
+      "mechanics": {
+        "stealth": {
+          "duration": 1.5,
+          "break_on_attack": true
+        }
+      }
+    },
     "ultimate": {
       "name": "Dimension of Varani",
       "description": "Conjures a time bubble that freezes enemy projectiles and creatures inside it. The Ultimate is destroyed by Lifestone Large Shots (3 hits)."
     }
-  },
-  "description": "A Duelist who strikes from the shadows with fast astral fists and time-bending abilities. ",
-  "difficulty": 2,
-  "health": 300,
-  "image_required": true,
-  "movement_type": "Ground",
-  "population": 0,
-  "tags": [],
-  "last_modified": "2026-02-18T07:38:57.568Z"
+  }
 }

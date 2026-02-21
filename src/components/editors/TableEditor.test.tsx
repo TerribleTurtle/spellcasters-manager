@@ -22,7 +22,6 @@ describe('TableEditor Smoke Tests', () => {
                  <FormProvider {...methods}>
                      <TableEditor 
                         fields={mockFields} 
-                        control={methods.control} 
                         initialData={{ name: 'Test', cost: 10, type: 'A' }} 
                      />
                  </FormProvider>
@@ -47,7 +46,6 @@ describe('TableEditor Smoke Tests', () => {
                 <FormProvider {...methods}>
                     <TableEditor 
                        fields={mockFields} 
-                       control={methods.control} 
                        initialData={{ type: 'A' }} 
                     />
                 </FormProvider>
