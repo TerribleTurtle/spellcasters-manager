@@ -1,6 +1,7 @@
 ﻿import path from 'path';
 import { fileService } from './fileService.js';
 import { patchService } from './patchService.js';
+import { queueService } from './queueService.js';
 import { publisherService } from './publisherService.js';
 import { backupService } from './backupService.js';
 import { logger } from '../utils/logger.js';
@@ -17,6 +18,13 @@ export class DataService {
     /**
      * Bulk loads all data for a specific category.
      * Returns an array of entity objects with injected _filename and _category metadata.
+     * 
+     * @param dataDir - The absolute path to the root data directory
+     * @param category - The entity category folder name (e.g., 'heroes', 'units')
+     * @returns Array of parsed JSON objects with `_filename` and `_category` appended
+     * 
+     * @example
+     * const heroes = await dataService.getCategoryData('/path/to/data', 'heroes');
      */
     async getCategoryData(dataDir: string, category: string): Promise<Record<string, unknown>[]> {
         const safeDirPath = path.resolve(dataDir, category);
@@ -52,6 +60,16 @@ export class DataService {
     /**
      * Saves data to a JSON file.
      * Optionally appends a change entry to the patch queue.
+     * 
+     * @param dataDir - The absolute path to the root data directory
+     * @param category - The entity category folder name
+     * @param filename - The filename to write (e.g., 'hero1.json')
+     * @param data - The entity data object to persist
+     * @param queue - If true, the change is queued instead of instantly patched
+     * @returns The normalized data that was written to disk
+     * 
+     * @example
+     * const saved = await dataService.saveData('/data', 'heroes', 'hero1.json', { name: 'Hero' }, true);
      */
     async saveData(dataDir: string, category: string, filename: string, data: unknown, queue: boolean = false): Promise<unknown> {
          const schema = getSchemaForCategory(category);
@@ -141,7 +159,7 @@ export class DataService {
          (safeData as Record<string, unknown>).last_modified = new Date().toISOString();
 
          if (queue) {
-             await patchService.enqueueEntityChange(dataDir, safeData, category, filename);
+             await queueService.enqueueEntityChange(dataDir, safeData, category, filename);
          } else {
              // AUTO-PATCH RECORDING (Standard Save)
               // Every non-queued save creates an immediate audit record in patches.json.
@@ -162,6 +180,14 @@ export class DataService {
 
     /**
      * Batches multiple file writes.
+     * 
+     * @param dataDir - The absolute path to the root data directory
+     * @param category - The entity category folder name
+     * @param updates - An array of filename/data pairs to write
+     * @returns An array of results indicating success/failure per file
+     * 
+     * @example
+     * const results = await dataService.saveBatch('/data', 'heroes', [{ filename: 'hero1.json', data: { name: 'Hero 1' } }]);
      */
     async saveBatch(dataDir: string, category: string, updates: { filename: string; data: unknown }[]): Promise<{ filename: string; success: boolean; error?: string }[]> {
         if (!Array.isArray(updates)) {
@@ -267,6 +293,36 @@ export class DataService {
         return results;
     }
 
+    /**
+     * Deletes an entity and handles necessary side-effects (auditing, queue cleanup, static publishing).
+     * 
+     * @param dataDir - The absolute path to the root data directory
+     * @param category - The entity category folder name
+     * @param filename - The filename to delete
+     * @param filePath - The fully resolved absolute path to the file
+     */
+    async deleteEntity(dataDir: string, category: string, filename: string, filePath: string): Promise<void> {
+        if (await fileService.exists(filePath)) {
+            // AUDIT: Record delete patch before destroying data
+            try {
+                const oldData = await fileService.readJson(filePath);
+                const deleteName = String((oldData as Record<string, unknown>).name || filename);
+                const change = buildSlimChange(filename, deleteName, 'DELETE', category, oldData, undefined);
+                await patchService.recordPatch(dataDir, `Delete: ${deleteName}`, 'Hotfix', [change]);
+            } catch (auditErr) {
+                logger.warn("Failed to record delete audit patch", { error: auditErr });
+                // Continue with delete even if audit fails
+            }
+
+            await fileService.deleteFile(filePath);
+            await queueService.removeByTargetId(dataDir, filename);
+
+            // Publish static API files if this is the community-api data dir
+            await publisherService.publishIfNeeded(dataDir);
+        } else {
+            throw AppError.notFound("File not found");
+        }
+    }
 }
 
 export const dataService = new DataService();

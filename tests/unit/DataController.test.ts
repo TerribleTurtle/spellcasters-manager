@@ -21,7 +21,6 @@ vi.mock('../../server/services/fileService', () => ({
 // Mock patchService
 vi.mock('../../server/services/patchService', () => ({
     patchService: {
-        enqueueEntityChange: vi.fn(),
         recordPatch: vi.fn().mockResolvedValue({ id: 'mock-patch' })
     }
 }));

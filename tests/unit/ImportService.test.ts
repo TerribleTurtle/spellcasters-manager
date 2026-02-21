@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // vi.hoisted mocks run before vi.mock factories
-const { mockFileService, mockBackupService, mockPatchService, mockGetSchema, mockGetCategories } = vi.hoisted(() => ({
+const { mockFileService, mockBackupService, mockPatchService, mockQueueService, mockGetSchema, mockGetCategories } = vi.hoisted(() => ({
     mockFileService: {
         exists: vi.fn().mockResolvedValue(true),
         listFiles: vi.fn().mockResolvedValue([]),
@@ -13,8 +13,10 @@ const { mockFileService, mockBackupService, mockPatchService, mockGetSchema, moc
         createBackup: vi.fn().mockResolvedValue('/backups/full_backup_123')
     },
     mockPatchService: {
-        enqueueEntityChange: vi.fn().mockResolvedValue(undefined),
         recordPatch: vi.fn().mockResolvedValue(undefined)
+    },
+    mockQueueService: {
+        enqueueEntityChange: vi.fn().mockResolvedValue(undefined)
     },
     mockGetSchema: vi.fn().mockReturnValue(null),
     mockGetCategories: vi.fn().mockReturnValue(['units', 'heroes'])
@@ -23,6 +25,7 @@ const { mockFileService, mockBackupService, mockPatchService, mockGetSchema, moc
 vi.mock('../../server/services/fileService.js', () => ({ fileService: mockFileService }));
 vi.mock('../../server/services/backupService.js', () => ({ backupService: mockBackupService }));
 vi.mock('../../server/services/patchService.js', () => ({ patchService: mockPatchService }));
+vi.mock('../../server/services/queueService.js', () => ({ queueService: mockQueueService }));
 vi.mock('../../src/config/entityRegistry.js', () => ({
     getSchemaForCategory: mockGetSchema,
     getRegisteredCategories: mockGetCategories
@@ -45,7 +48,7 @@ describe('ImportService', () => {
         mockFileService.writeJson.mockResolvedValue(undefined);
         mockFileService.ensureDir.mockResolvedValue(undefined);
         mockBackupService.createBackup.mockResolvedValue('/backups/full_backup_123');
-        mockPatchService.enqueueEntityChange.mockResolvedValue(undefined);
+        mockQueueService.enqueueEntityChange.mockResolvedValue(undefined);
         mockPatchService.recordPatch.mockResolvedValue(undefined);
         mockGetSchema.mockReturnValue(null);
         mockGetCategories.mockReturnValue(['units', 'heroes']);
@@ -120,7 +123,7 @@ describe('ImportService', () => {
             const result = await service.importData('/data', importData, true);
 
             expect(result.imported).toBe(1);
-            expect(mockPatchService.enqueueEntityChange).toHaveBeenCalledTimes(1);
+            expect(mockQueueService.enqueueEntityChange).toHaveBeenCalledTimes(1);
             expect(mockFileService.writeJson).not.toHaveBeenCalled();
         });
 

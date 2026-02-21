@@ -1,64 +1,74 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import request from "supertest";
+import express, { Express } from "express";
+import {
+  saveBatch,
+  validatePath,
+} from "../../server/controllers/dataController";
+import { fileService } from "../../server/services/fileService";
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import request from 'supertest';
-import express, { Express } from 'express';
-import { saveBatch, validatePath } from '../../server/controllers/dataController';
-import { fileService } from '../../server/services/fileService';
-
-vi.mock('../../server/services/fileService');
+vi.mock("../../server/services/fileService");
 
 const app: Express = express();
 app.use(express.json());
 app.use((req, res, next) => {
-    (req as any).context = { dataDir: 'root/data', mode: 'dev' };
-    next();
+  req.context = { dataDir: "root/data", assetsDir: "root/assets" };
+  next();
 });
-app.post('/api/data/:category/batch', validatePath, saveBatch);
+app.post("/api/data/:category/batch", validatePath, saveBatch);
 
-describe('Integration: Batch Save', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
+describe("Integration: Batch Save", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    it('should save multiple valid items', async () => {
-        const payload = [
-            { filename: 'u1.json', data: { id: 'u1', name: 'Valid1' } },
-            { filename: 'u2.json', data: { id: 'u2', name: 'Valid2' } }
-        ];
+  it("should save multiple valid items", async () => {
+    const payload = [
+      { filename: "u1.json", data: { id: "u1", name: "Valid1" } },
+      { filename: "u2.json", data: { id: "u2", name: "Valid2" } },
+    ];
 
-        const res = await request(app)
-            .post('/api/data/test-cat/batch') // Use test-cat to skip schema validation
-            .send(payload);
+    const res = await request(app)
+      .post("/api/data/test-cat/batch") // Use test-cat to skip schema validation
+      .send(payload);
 
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.results).toHaveLength(2);
-        
-        // +1 for patches.json (audit log)
-        expect(fileService.writeJson).toHaveBeenCalledTimes(3);
-    });
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.results).toHaveLength(2);
 
-    it('should handle partial failure', async () => {
-        // Mock writeJson to fail for specific file
-        (fileService.writeJson as any).mockImplementation((path: string) => {
-            if (path.includes('bad.json')) throw new Error('write error');
-        });
+    // +1 for patches.json (audit log)
+    expect(fileService.writeJson).toHaveBeenCalledTimes(3);
+  });
 
-        const payload = [
-            { filename: 'good.json', data: { name: 'Good' } },
-            { filename: 'bad.json', data: { name: 'Bad' } }
-        ];
+  it("should handle partial failure", async () => {
+    // Mock writeJson to fail for specific file
+    vi.mocked(fileService.writeJson).mockImplementation(
+      async (path: string) => {
+        if (path.includes("bad.json")) throw new Error("write error");
+      }
+    );
 
-        const res = await request(app)
-            .post('/api/data/test-cat/batch')
-            .send(payload);
+    const payload = [
+      { filename: "good.json", data: { name: "Good" } },
+      { filename: "bad.json", data: { name: "Bad" } },
+    ];
 
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
-        const results = res.body.results;
-        
-        expect(results.find((r: any) => r.filename === 'good.json').success).toBe(true);
-        expect(results.find((r: any) => r.filename === 'bad.json').success).toBe(false);
-        expect(results.find((r: any) => r.filename === 'bad.json').error).toBe('write error');
-    });
+    const res = await request(app)
+      .post("/api/data/test-cat/batch")
+      .send(payload);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    const results = res.body.results as Array<{
+      filename: string;
+      success: boolean;
+      error?: string;
+    }>;
+
+    expect(results.find((r) => r.filename === "good.json")?.success).toBe(true);
+    expect(results.find((r) => r.filename === "bad.json")?.success).toBe(false);
+    expect(results.find((r) => r.filename === "bad.json")?.error).toBe(
+      "write error"
+    );
+  });
 });

@@ -1,14 +1,12 @@
-import { Plus, Trash2, ChevronDown, ChevronRight, Settings } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 import { useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { useState } from "react";
-import { CategorySchema } from "@/types";
-
-// --- Constants from schema ---
-const CALCULATION_UNITS = ["flat", "percent_max_hp", "percent_current_hp"] as const;
+import { DamageModifierItem } from "./mechanics/DamageModifierItem";
+import { BonusDamageItem } from "./mechanics/BonusDamageItem";
 
 export function MechanicsPanel() {
   const { control } = useFormContext();
@@ -27,8 +25,6 @@ export function MechanicsPanel() {
 
   // Watch modifiers to display summary in header
   useWatch({ control, name: "mechanics.damage_modifiers" });
-
-  const categories = CategorySchema.options;
 
   // Count total mechanics items for the header badge
   const totalItems = fields.length + bonusFields.length;
@@ -223,90 +219,13 @@ export function MechanicsPanel() {
               </Button>
             </div>
 
-            {fields.map((field, index) => {
-              return (
-                <div
-                  key={field.id}
-                  className="relative border rounded-md p-4 space-y-3 border-l-[3px] border-l-slate-500 bg-slate-500/5"
-                >
-                  <div className="flex items-center justify-between">
-                     <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Damage Modifier</h4>
-                     <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    {/* Multiplier */}
-                    <FormField
-                      control={control}
-                      name={`mechanics.damage_modifiers.${index}.multiplier`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Multiplier (x)</FormLabel>
-                          <FormControl>
-                            <Input
-                               type="number"
-                               step="0.1"
-                               {...field}
-                               onChange={e => field.onChange(parseFloat(e.target.value))}
-                               className="h-8 text-xs"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Target Types */}
-                    <FormField
-                      control={control}
-                      name={`mechanics.damage_modifiers.${index}.target_types`}
-                      render={({ field }) => {
-                          const currentValues = (field.value as string[]) || [];
-                          return (
-                              <FormItem>
-                                  <FormLabel className="text-xs block mb-2">Target Types</FormLabel>
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                      {categories.map(category => (
-                                          <div key={category} className="flex items-center space-x-2">
-                                              <input
-                                                  type="checkbox"
-                                                  id={`cat-${index}-${category}`}
-                                                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                  checked={currentValues.includes(category)}
-                                                  onChange={(e) => {
-                                                      if (e.target.checked) {
-                                                          field.onChange([...currentValues, category]);
-                                                      } else {
-                                                          field.onChange(currentValues.filter(v => v !== category));
-                                                      }
-                                                  }}
-                                              />
-                                              <label 
-                                                  htmlFor={`cat-${index}-${category}`} 
-                                                  className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                              >
-                                                  {category}
-                                              </label>
-                                          </div>
-                                      ))}
-                                  </div>
-                                  <FormMessage />
-                              </FormItem>
-                          );
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+            {fields.map((field, index) => (
+              <DamageModifierItem
+                key={field.id}
+                index={index}
+                onRemove={() => remove(index)}
+              />
+            ))}
 
             {fields.length === 0 && (
               <div className="text-center p-4 border border-dashed rounded-lg text-muted-foreground bg-muted/20 text-xs">
@@ -330,114 +249,13 @@ export function MechanicsPanel() {
               </Button>
             </div>
 
-            {bonusFields.map((field, index) => {
-              return (
-                <div
-                  key={field.id}
-                  className="relative border rounded-md p-4 space-y-3 border-l-[3px] border-l-amber-500 bg-amber-500/5"
-                >
-                  <div className="flex items-center justify-between">
-                     <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-600">Bonus Damage</h4>
-                     <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeBonus(index)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Value */}
-                    <FormField
-                      control={control}
-                      name={`mechanics.bonus_damage.${index}.value` as never}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Value</FormLabel>
-                          <FormControl>
-                            <Input
-                               type="number"
-                               step="0.1"
-                               {...field}
-                               onChange={e => field.onChange(parseFloat(e.target.value))}
-                               className="h-8 text-xs"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Unit */}
-                    <FormField
-                      control={control}
-                      name={`mechanics.bonus_damage.${index}.unit` as never}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Unit</FormLabel>
-                          <FormControl>
-                            <select
-                              {...field}
-                              value={(field.value as string) ?? "flat"}
-                              onChange={e => field.onChange(e.target.value)}
-                              className="w-full h-8 text-xs rounded-md border border-input bg-background px-3 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            >
-                              {CALCULATION_UNITS.map(u => (
-                                <option key={u} value={u}>{u.replace(/_/g, ' ')}</option>
-                              ))}
-                            </select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Target Types */}
-                  <FormField
-                    control={control}
-                    name={`mechanics.bonus_damage.${index}.target_types` as never}
-                    render={({ field }) => {
-                        const currentValues = (field.value as string[]) || [];
-                        return (
-                            <FormItem>
-                                <FormLabel className="text-xs block mb-2">Target Types</FormLabel>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                    {categories.map(category => (
-                                        <div key={category} className="flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                id={`bonus-${index}-${category}`}
-                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                checked={currentValues.includes(category)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        field.onChange([...currentValues, category]);
-                                                    } else {
-                                                        field.onChange(currentValues.filter((v: string) => v !== category));
-                                                    }
-                                                }}
-                                            />
-                                            <label 
-                                                htmlFor={`bonus-${index}-${category}`} 
-                                                className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                                {category}
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        );
-                    }}
-                  />
-                </div>
-              );
-            })}
+            {bonusFields.map((field, index) => (
+              <BonusDamageItem
+                key={field.id}
+                index={index}
+                onRemove={() => removeBonus(index)}
+              />
+            ))}
 
             {bonusFields.length === 0 && (
               <div className="text-center p-4 border border-dashed rounded-lg text-muted-foreground bg-muted/20 text-xs">

@@ -1,6 +1,7 @@
 import path from 'path';
 import { fileService } from './fileService.js';
 import { patchService } from './patchService.js';
+import { queueService } from './queueService.js';
 import { backupService } from './backupService.js';
 import { logger } from '../utils/logger.js';
 import { Change } from '../../src/domain/schemas/index.js';
@@ -69,6 +70,9 @@ export class ImportService {
             throw AppError.internal("Safety backup failed. Import aborted.");
         }
 
+        // Collect changes during the write loop (avoids a second iteration)
+        const changes: Change[] = [];
+
         for (const [category, items] of Object.entries(data as Record<string, unknown>)) {
             if (!Array.isArray(items)) continue;
             
@@ -105,57 +109,37 @@ export class ImportService {
 
                     if (queue) {
                         // QUEUE MODE: Enqueue as change instead of writing
-                        await patchService.enqueueEntityChange(dataDir, item, category, filename);
+                        await queueService.enqueueEntityChange(dataDir, item, category, filename);
                         report.imported++;
                     } else {
                         // DIRECT WRITE MODE
-                        // Ensure directory exists
                         await fileService.ensureDir(path.dirname(filePath));
                         await fileService.writeJson(filePath, item);
                         report.imported++;
+
+                        // Collect change for audit patch (single-pass)
+                        changes.push({
+                            target_id: filename,
+                            name: String((item as Record<string, unknown>).name || filename),
+                            field: 'entity',
+                            old: undefined,
+                            new: item,
+                            category: category
+                        });
                     }
                 } catch (e) {
                     report.errors.push(`Failed to import ${category}/${id}: ${(e as Error).message}`);
                 }
             }
         }
-        
 
-        if (!queue && report.imported > 0) {
-            // Direct Import Mode - Record a single patch for the batch
-            const changes: Change[] = [];
-            
-            for (const [category, items] of Object.entries(data as Record<string, unknown>)) {
-                 if (!Array.isArray(items)) continue;
-                  for (const item of (items as Record<string, unknown>[])) {
-                      const rawId = (item as Record<string, unknown>).id;
-                     if (!rawId) continue;
-                     const id = String(rawId);
-                     const filename = id.endsWith('.json') ? id : `${id}.json`;
-                      
-                      // Check if this item caused an error
-                      const hasError = report.errors.some(e => e.includes(`${category}/${id}`) || e.includes(`${category}/${filename}`));
-                      if (!hasError) {
-                          changes.push({
-                              target_id: filename,
-                               name: String((item as Record<string, unknown>).name || filename),
-                             field: 'entity',
-                             old: undefined, // New import
-                             new: item,
-                             category: category
-                         });
-                     }
-                 }
-            }
-
-            if (changes.length > 0) {
-                await patchService.recordPatch(
-                    dataDir, 
-                    `Import: ${changes.length} items`, 
-                    'Content', 
-                    changes
-                );
-            }
+        if (!queue && changes.length > 0) {
+            await patchService.recordPatch(
+                dataDir, 
+                `Import: ${changes.length} items`, 
+                'Content', 
+                changes
+            );
         }
 
         return report;

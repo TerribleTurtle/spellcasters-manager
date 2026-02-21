@@ -4,7 +4,7 @@ import { dataService } from '../../server/services/dataService'; // Lowercase in
 import { importService } from '../../server/services/importService';
 import { fileService } from '../../server/services/fileService';
 import { backupService } from '../../server/services/backupService';
-import { patchService } from '../../server/services/patchService';
+import { queueService } from '../../server/services/queueService';
 import { getSchemaForCategory } from '../../src/config/entityRegistry';
 
 // Mock dependencies
@@ -20,8 +20,12 @@ vi.mock('../../server/services/backupService', () => ({
 }));
 vi.mock('../../server/services/patchService', () => ({
     patchService: {
-        enqueueEntityChange: vi.fn().mockResolvedValue(undefined),
         recordPatch: vi.fn().mockResolvedValue({ id: 'mock-patch' })
+    }
+}));
+vi.mock('../../server/services/queueService', () => ({
+    queueService: {
+        enqueueEntityChange: vi.fn().mockResolvedValue(undefined)
     }
 }));
 vi.mock('../../src/config/entityRegistry', () => ({
@@ -96,13 +100,13 @@ describe('Server DataService', () => {
                  expect.stringContaining('units'),
                  expect.objectContaining({ name: 'Imported Unit' })
              );
-             expect(patchService.enqueueEntityChange).not.toHaveBeenCalled();
+             expect(queueService.enqueueEntityChange).not.toHaveBeenCalled();
         });
 
         it('enqueues changes in queue mode (queue=true)', async () => {
              await importService.importData(dataDir, mockImportData, true);
              
-             expect(patchService.enqueueEntityChange).toHaveBeenCalledWith(
+             expect(queueService.enqueueEntityChange).toHaveBeenCalledWith(
                  dataDir,
                  expect.objectContaining({ name: 'Imported Unit' }),
                  'units',

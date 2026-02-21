@@ -32,15 +32,16 @@ export function EntityHistoryPanel({ entityId, onRetcon }: EntityHistoryPanelPro
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    setError(false);
-    patchService
-      .getHistory({ entity: entityId, flat: true })
-      .then((data: unknown) => {
-        if (!Array.isArray(data)) return;
-        // Flatten: the flat endpoint returns change-level entries with patch metadata
-        const entries: HistoryEntry[] = (data as Record<string, unknown>[]).map((item: Record<string, unknown>) => ({
+    let active = true;
+
+    async function loadHistory() {
+      setLoading(true);
+      setError(false);
+      try {
+        const data = await patchService.getHistory({ entity: entityId, flat: true });
+        if (!active || !Array.isArray(data)) return;
+        
+        const entries: HistoryEntry[] = (data as Record<string, unknown>[]).map((item) => ({
           target_id: String(item.target_id ?? ''),
           name: String(item.name ?? ''),
           field: String(item.field ?? ''),
@@ -53,13 +54,20 @@ export function EntityHistoryPanel({ entityId, onRetcon }: EntityHistoryPanelPro
           patch_title: String(item.patch_title || item.title || ''),
           patch_diff: item.patch_diff ? String(item.patch_diff) : undefined,
         }));
-        setHistory(entries);
-      })
-      .catch(() => {
+        
+        if (active) setHistory(entries);
+      } catch {
+        if (active) setError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
 
-          setError(true);
-      })
-      .finally(() => setLoading(false));
+    loadHistory();
+
+    return () => {
+      active = false;
+    };
   }, [entityId]);
 
   if (loading) {

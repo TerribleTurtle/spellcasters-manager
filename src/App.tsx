@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useUrlSync } from "@/hooks/useUrlSync"
 import { ForgePage } from "@/components/forge/ForgePage"
 import { ScribePanel } from "@/components/scribe/ScribePanel"
 import { AppLayout } from "@/components/layout/AppLayout"
@@ -30,18 +31,7 @@ function App() {
   });
 
   // URL State Sync
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (view) params.set('view', view);
-    if (currentCategory) params.set('category', currentCategory);
-    
-    const newSearch = params.toString();
-    const currentSearch = window.location.search.replace('?', '');
-    
-    if (newSearch !== currentSearch) {
-        window.history.replaceState(null, '', `?${newSearch}`);
-    }
-  }, [view, currentCategory]);
+  useUrlSync(view, currentCategory);
 
   // Hook 1: Data & Registry
   const { 

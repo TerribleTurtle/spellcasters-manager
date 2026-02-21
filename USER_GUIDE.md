@@ -33,6 +33,11 @@
 3. **Save** (`Ctrl+S`) — writes the JSON file to disk. An automatic audit entry is recorded in `patches.json`.
 4. **Queue** — stages the change for batching into a larger patch release.
 
+### Live Preview
+
+- Click the **Eye icon** in the Studio toolbar to open a **Live Preview** panel on the right side.
+- This shows how the unit will appear on SpellcastersDB — both as an **Archive Card** and a **Detail Page**. The preview updates in real-time as you edit fields.
+
 ### Deleting an Entity
 
 1. Open the entity.
@@ -71,10 +76,10 @@
 
 ## 5. Data Management
 
-- **Switch Data Source**: Use the Data Path Switcher in the sidebar to change data directories.
-  - **Switch**: Point to a different `DATA_DIR`.
-  - **Sync**: Merge live data into dev (preserves your queue).
-  - **Wipe & Copy**: Clean reset from live data (auto-backs up dev data first).
+- **Switch Data Source**: To change data directories, update the `DATA_DIR` in your `.env` file and restart the server.
+- **Syncing Data**: You can use the Terminal to sync data between environments:
+  - `npm run sync-data`: Merge live data into dev (preserves your local queue).
+  - `npm run sync-data:clean`: Clean reset from live data (auto-backs up dev data first).
 
 ---
 

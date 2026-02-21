@@ -75,10 +75,6 @@ export function useEditorActions<T extends Record<string, unknown>>({
      * Save — writes file to disk + records in audit log (patches.json).
      * Does NOT create a git commit.
      */
-    /**
-     * Save — writes file to disk + records in audit log (patches.json).
-     * Does NOT create a git commit.
-     */
     const handleSave = (data: Partial<T>, filenameOverride?: string, skipPreview: boolean = false) => {
         requestSave('silent', data, async (payload) => {
             try {

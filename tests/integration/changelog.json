@@ -1,6 +1,6 @@
 [
   {
-    "id": "patch_1704067206800",
+    "id": "patch_1704067206400",
     "version": "auto",
     "date": "2024-01-01",
     "type": "Hotfix",
@@ -20,11 +20,11 @@
           },
           {
             "kind": "E",
-            "lhs": "2024-01-01T00:00:05.700Z",
+            "lhs": "2024-01-01T00:00:05.250Z",
             "path": [
               "last_modified"
             ],
-            "rhs": "2024-01-01T00:00:06.800Z"
+            "rhs": "2024-01-01T00:00:06.400Z"
           }
         ],
         "field": "entity",
@@ -35,7 +35,7 @@
     "title": "Auto-Save: rotate.json"
   },
   {
-    "id": "patch_1704067205700",
+    "id": "patch_1704067205250",
     "version": "auto",
     "date": "2024-01-01",
     "type": "Hotfix",
@@ -55,11 +55,11 @@
           },
           {
             "kind": "E",
-            "lhs": "2024-01-01T00:00:04.500Z",
+            "lhs": "2024-01-01T00:00:04.200Z",
             "path": [
               "last_modified"
             ],
-            "rhs": "2024-01-01T00:00:05.700Z"
+            "rhs": "2024-01-01T00:00:05.250Z"
           }
         ],
         "field": "entity",
@@ -70,7 +70,7 @@
     "title": "Auto-Save: rotate.json"
   },
   {
-    "id": "patch_1704067204500",
+    "id": "patch_1704067204200",
     "version": "auto",
     "date": "2024-01-01",
     "type": "Hotfix",
@@ -90,11 +90,11 @@
           },
           {
             "kind": "E",
-            "lhs": "2024-01-01T00:00:03.200Z",
+            "lhs": "2024-01-01T00:00:03.150Z",
             "path": [
               "last_modified"
             ],
-            "rhs": "2024-01-01T00:00:04.500Z"
+            "rhs": "2024-01-01T00:00:04.200Z"
           }
         ],
         "field": "entity",
@@ -105,7 +105,7 @@
     "title": "Auto-Save: rotate.json"
   },
   {
-    "id": "patch_1704067203200",
+    "id": "patch_1704067203150",
     "version": "auto",
     "date": "2024-01-01",
     "type": "Hotfix",
@@ -129,7 +129,7 @@
             "path": [
               "last_modified"
             ],
-            "rhs": "2024-01-01T00:00:03.200Z"
+            "rhs": "2024-01-01T00:00:03.150Z"
           }
         ],
         "field": "entity",

@@ -10,12 +10,7 @@ Thank you for your interest in contributing to the **Spellcasters Manager**!
 
 ## Data Architecture
 
-This project uses a dual-mode data system:
-
-- **DEV Mode (Blue)**: Reads/Writes to `./mock_data` (Local sandbox).
-- **LIVE Mode (Red)**: Reads/Writes to `../spellcasters-community-api/data` (Production).
-
-**Note:** Do not commit changes to `mock_data` unless you are intentionally updating the test fixtures.
+This project reads and writes all JSON data and assets to the directory specified by your `DATA_DIR` environment variable. By default, this is your `../spellcasters-community-api/data` fork, but you can set it to `./mock_data` to work in a local sandbox without affecting your fork.
 
 ## Project Structure
 
@@ -25,12 +20,45 @@ This project uses a dual-mode data system:
 
 ## Testing
 
-We use **Vitest** for unit testing.
+We use **Vitest** for all tests.
 
 - Run all tests: `npm test`
-- Run specific test: `npx vitest tests/unit/UnitService.test.ts`
+- Run in watch mode: `npm run test:watch`
+- Run specific test: `npx vitest tests/unit/DataService.test.ts`
 
-**Requirement:** All new features must include unit tests. Ensure `npm test` passes before submitting a PR.
+### Test Location Convention
+
+| Location                      | Environment | Purpose                                                     |
+| ----------------------------- | ----------- | ----------------------------------------------------------- |
+| `src/**/*.test.tsx`           | `jsdom`     | Client-side component & hook tests                          |
+| `tests/unit/*.test.ts`        | `node`      | Server-side unit tests (services, controllers, utils)       |
+| `tests/integration/*.test.ts` | `node`      | Server-side integration tests (real file I/O via `tempEnv`) |
+| `tests/helpers/`              | `node`      | Test environment and mocking utilities                      |
+| `tests/audit/`                | `node`      | Bulk schema/data validations                                |
+| `tests/repro/`                | `node`      | Tests for specific bug reproduction                         |
+
+> **Do not** move `.tsx` tests from `src/` to `tests/` — the Vitest `environmentMatchGlobs` in `vite.config.ts` routes them to `jsdom` based on their `src/` path.
+
+### Integration Test Helpers
+
+For tests that need real file system operations (no mocks), use the `tempEnv` helper:
+
+```ts
+import { createTempEnv, TempEnv } from "../helpers/tempEnv";
+
+let env: TempEnv;
+beforeEach(async () => {
+  env = await createTempEnv();
+});
+afterEach(async () => {
+  await env.cleanup();
+});
+
+// Seed fixtures
+await env.seedFile("units", "archer.json", { id: "u1", name: "Archer" });
+```
+
+**Requirement:** All new features must include tests. Ensure `npm test` passes before submitting a PR.
 
 ## Code Style
 

@@ -74,12 +74,12 @@ The **History** tab in the Patch Manager shows all published patches. Filter by 
 
 When publishing, the Manager generates static JSON files for the community API (`../spellcasters-community-api/`):
 
-| File                    | Purpose                                       |
-| ----------------------- | --------------------------------------------- |
-| `changelog.json`        | Full history — array of all patches           |
-| `changelog_latest.json` | Most recent patch object                      |
-| `balance_index.json`    | Per-entity balance tags for deckbuilder icons |
-| `timeline/{id}.json`    | Entity snapshot history for card pages        |
+| File                    | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| `changelog_index.json`  | Pagination manifest (page count + totals) |
+| `changelog_page_N.json` | Paginated patch arrays (50 per page)      |
+| `changelog_latest.json` | Most recent patch object                  |
+| `timeline/{id}.json`    | Entity snapshot history for card pages    |
 
 ## Architecture
 
@@ -109,6 +109,7 @@ Create a `.env` file in the project root:
 ```env
 DATA_DIR=./data     # Path to the JSON data directory
 PORT=3001           # Backend server port (default: 3001)
+# SYNC_SOURCE=../spellcasters-community-api/data  # Where `npm run sync-data` reads from
 ```
 
 > **Tip:** To switch data sources, change `DATA_DIR` and restart. No code changes needed.
@@ -116,6 +117,8 @@ PORT=3001           # Backend server port (default: 3001)
 ### Running
 
 1. **Seed Local Data** (first time):
+
+   > **Important:** This command assumes you have cloned the [spellcasters-community-api](https://github.com/TerribleTurtle/spellcasters-community-api) repository into the same parent directory as this project. If you just want to test the app, you can skip this step and set `DATA_DIR=./mock_data` in your `.env` file to use the built-in sandbox data.
 
    ```bash
    npm run sync-data
@@ -130,18 +133,17 @@ PORT=3001           # Backend server port (default: 3001)
 ### Testing
 
 ```bash
-npm test               # Full suite (Unit + Integration + Hooks + Components)
+npm test               # Full suite (Unit + Integration + Components + Hooks)
 npm run test:coverage  # Generate coverage report
 ```
 
-The test suite covers:
+The test suite uses a hybrid `vitest` architecture:
 
-- **Server Unit Tests**: Controllers, Services (Git, File, Patch, Queue, Import, Publisher, Dev), Utils.
-- **Integration Tests**: Data flow, Backup/Audit, Batch operations, Patch commit.
-- **Frontend Hook Tests**: useEntityMutation, useEditorActions, useEntitySelection, useEditorForm.
-- **Component Smoke Tests**: TableEditor, AppSidebar.
+- **Client Tests** (`src/**/*.test.tsx`): Run in a custom `jsdom` environment. Coverage includes Context Hooks, UI Editors, and the `App.tsx` shell.
+- **Server Tests** (`tests/**/*.test.ts`): Run in the native Node environment. Coverage includes Express Routing, File System atomic writes, API Controllers, and Git integrations.
+- **Integration Tests**: Handled via `supertest` interacting with real temporary file directories (via `tests/helpers/tempEnv`) rather than mocked FS calls, ensuring true end-to-end data validation.
 
-**Current Suite**: 415 tests across 44 files.
+**Current Suite**: 437 tests across 50 files ✅
 
 ## Data Management
 
@@ -160,4 +162,4 @@ MIT
 - **[SpellcastersDB](https://github.com/TerribleTurtle/spellcastersdb)** — The public database & deckbuilder
 - **[Spellcasters Bot](https://github.com/TerribleTurtle/spellcasters-bot)** — Discord integration
 
-> All tools consume the same [Community API v2](https://terribleturtle.github.io/spellcasters-community-api/api/v2/).
+> All tools consume the same [Community API v2](https://github.com/TerribleTurtle/spellcasters-community-api).

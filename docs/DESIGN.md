@@ -33,7 +33,7 @@ If a feature doesn't serve one of these three jobs, it doesn't belong.
 | --------------- | --------------------------------- | ------------------------------------------------------ |
 | Frontend        | React + Vite + TailwindCSS v4     | UI with hot reload                                     |
 | Backend         | Express + Node.js                 | File system bridge (read/write JSON, asset management) |
-| Validation      | Zod (`src/domain/schemas.ts`)     | Single source of truth for both client and server      |
+| Validation      | Zod (`src/domain/schemas/`)       | Single source of truth for both client and server      |
 | Version Control | Git CLI (`git add`, `git commit`) | Automated commits on patch publish                     |
 | Data            | JSON files on disk                | No database — files are the source of truth            |
 
@@ -45,7 +45,7 @@ Browser sandbox prevents direct file writes. The Express server bridges the gap,
 - **Data**:
   - `GET /api/list/:category` — List files
   - `GET /api/data/:category/:filename` — Read file
-  - `POST /api/save/:category/:filename` — Writr file (optional `?queue=true`)
+  - `POST /api/save/:category/:filename` — Write file (optional `?queue=true`)
   - `POST /api/save/:category/batch` — Batch write
   - `DELETE /api/data/:category/:filename` — Delete file
   - `POST /api/admin/reset` — Reset DEV data
@@ -68,7 +68,7 @@ Browse Library → Edit Entity → Quick Save or Queue → Tag → Publish Patch
 
 ## 5. Entity Model
 
-All entities validated by Zod schemas in `src/domain/schemas.ts`:
+All entities validated by Zod schemas in `src/domain/schemas/`:
 
 - **UnitSchema**: Core stats (health, damage, range, speed, cost), type, tier.
 - **HeroSchema**: Extends Unit with `hero_class`, `abilities`, `ultimate_ability`.

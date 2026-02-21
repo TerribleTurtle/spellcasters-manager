@@ -4,7 +4,7 @@ import { Change, ChangeSchema } from '../../src/domain/schemas/index.js';
 import { logger } from '../utils/logger.js';
 import { auditLogger } from '../utils/auditLogger.js';
 import { AppError } from '../utils/AppError.js';
-import { ensureJsonExt } from '../utils/pathUtils.js';
+import { ensureJsonExt } from '../../src/lib/pathUtils.js';
 
 export class QueueService {
     /**

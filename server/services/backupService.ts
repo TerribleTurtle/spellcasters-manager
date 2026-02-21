@@ -47,8 +47,6 @@ export class BackupService {
         try {
             const backupDir = path.join(dataDir, 'queue_backups');
             await fileService.ensureDir(backupDir);
-            
-            await fsPromises.mkdir(backupDir, { recursive: true });
 
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const backupFile = path.join(backupDir, `queue_backup_${timestamp}.json`);
@@ -86,11 +84,8 @@ export class BackupService {
             const relativePath = path.relative(dataDir, filePath);
             // Safety check: ensure file is inside dataDir
             if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-                // Determine if it's safe to backup? 
-                // For now, only backup files strictly inside dataDir to avoid confusion
-                 // but quickSave/saveData ensure this anyway.
-                 // If it fails relative check, just ignore or log warning?
-                 // Let's assume valid dataDir usage for now.
+                 logger.warn(`[Backup] Blocked path traversal attempt: ${filePath} is outside ${dataDir}`);
+                 return null;
             }
 
             const historyDir = path.join(dataDir, 'backups', 'file_history', path.dirname(relativePath));

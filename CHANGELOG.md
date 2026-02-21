@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2026-02-20
+
+### Changed
+
+- **Refactoring Audit (7 items):** Full codebase cleanup pass.
+  - Eliminated duplicate `pathUtils.ts` (server/src) — single canonical copy in `src/lib/`.
+  - Removed dead `stripInternalFields` (shallow) from `server/utils/requestHelpers.ts` — all callers use recursive version from `src/domain/utils.ts`.
+  - Removed `PatchService` pass-through methods (`readQueueSafe`, `enqueueEntityChange`) — callers now import `queueService` directly.
+  - Consolidated `importService.ts` double-iteration into single-pass with inline change collection.
+  - Split `server/index.ts` (193 lines) into `routes.ts`, `middleware.ts`, and `config/multer.ts` (~90 lines entry point).
+  - Added RHF generic variance workaround comments to type casts.
+- **Cleanup-5:** Final audit pass. Removed unused import, verified 0 ESLint errors baseline.
+- **Docs:** Fixed stale `balance_index.json` reference in README Patch History API table.
+
 ## [1.0.5] - 2026-02-20
 
 ### Changed

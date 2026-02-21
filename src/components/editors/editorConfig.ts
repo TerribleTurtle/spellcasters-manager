@@ -29,6 +29,7 @@ export interface EntityEditorConfig<T> {
   defaultValues: Partial<T>;
   normalize?: (data: Record<string, unknown>) => T;
   extraPanels?: React.ComponentType<{ initialData?: T }>[];
+  skipDiff?: boolean;
 }
 
 // --- Normalization Logic ---
@@ -140,6 +141,6 @@ export const SPELL_EDITOR_CONFIG: EntityEditorConfig<Spell> = {
         value: 0,
         duration: 0,
         cooldown: 0,
-    } as unknown as Spell, // Cast needed if type mismatch on legacy fields, but Spell matches Schema now.
+    } as unknown as Spell, // RHF generic variance workaround — Spell matches Schema shape but TS can't prove it
     extraPanels: [MechanicsPanel, TagsPanel],
 };

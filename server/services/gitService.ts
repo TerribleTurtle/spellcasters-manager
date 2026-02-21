@@ -20,6 +20,12 @@ export class GitService {
      return simpleGit(repoRoot);
   }
 
+  /**
+   * Gets uncommitted JSON changes in the data directory using `git status` and `git diff`.
+   * 
+   * @param dataDir - Absolute path to the data directory
+   * @returns Array of Change objects representing unstaged modifications
+   */
   async getDiff(dataDir: string): Promise<Change[]> {
     const git = this.getGitForDataDir(dataDir);
     const repoRoot = path.resolve(dataDir, '..');
@@ -73,6 +79,14 @@ export class GitService {
     }
   }
 
+  /**
+   * Commits a patch to git, converting absolute paths to repo-relative paths.
+   * 
+   * @param dataDir - Absolute path to the data directory
+   * @param patch - The Patch object being committed
+   * @param message - The git commit message
+   * @param filesToStage - Array of absolute file paths to stage and commit
+   */
   async commitPatch(dataDir: string, patch: Patch, message: string, filesToStage: string[]): Promise<void> {
      const git = this.getGitForDataDir(dataDir);
      const repoRoot = path.resolve(dataDir, '..');
@@ -91,6 +105,10 @@ export class GitService {
   /**
    * Returns the staged diff (after `git add`, before `git commit`).
    * Used to capture a small diff string for patch entries.
+   * 
+   * @param dataDir - Absolute path to the data directory
+   * @param filesToStage - Array of absolute file paths to diff
+   * @returns Raw git diff string, or empty string on failure
    */
   async getStagedDiff(dataDir: string, filesToStage: string[]): Promise<string> {
      const git = this.getGitForDataDir(dataDir);

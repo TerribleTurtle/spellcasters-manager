@@ -3,13 +3,7 @@ import { AppError } from '../utils/AppError.js';
 import { fileService } from '../services/fileService.js';
 import { dataService } from '../services/dataService.js';
 import { importService } from '../services/importService.js';
-import { patchService } from '../services/patchService.js';
-import { publisherService } from '../services/publisherService.js';
-
-import { queueService } from '../services/queueService.js';
-import { logger } from '../utils/logger.js';
 import { validatePath } from '../utils/requestHelpers.js';
-import { buildSlimChange } from '../utils/slimChange.js';
 
 export { validatePath };
 
@@ -73,33 +67,10 @@ export const deleteData = async (req: Request, res: Response, next: NextFunction
     if (!filePath) return next(AppError.internal("Path resolution failed"));
 
     try {
-        if (await fileService.exists(filePath)) {
-            // AUDIT: Record delete patch before destroying data
-            try {
-                const oldData = await fileService.readJson(filePath);
-                const deleteName = String((oldData as Record<string, unknown>).name || filename);
-                const change = buildSlimChange(filename, deleteName, 'DELETE', category, oldData, undefined);
-                await patchService.recordPatch(dataDir, `Delete: ${deleteName}`, 'Hotfix', [change]);
-            } catch (auditErr) {
-                logger.warn("Failed to record delete audit patch", { error: auditErr });
-                // Continue with delete even if audit fails? 
-                // Better to warn but proceed, or fail safe? 
-                // Proceeding is standard for "delete", but let's log loudly.
-            }
-
-            await fileService.deleteFile(filePath);
-            await queueService.removeByTargetId(dataDir, filename);
-
-            // Publish static API files if this is the community-api data dir
-            await publisherService.publishIfNeeded(dataDir);
-
-            res.json({ success: true });
-        } else {
-            return next(AppError.notFound("File not found"));
-        }
+        await dataService.deleteEntity(dataDir, category, filename, filePath);
+        res.json({ success: true });
     } catch (e) {
-        logger.error("Delete Error:", { error: e });
-        next(AppError.internal("Delete failed", { originalError: e }));
+        next(e);
     }
 };
 

@@ -100,21 +100,3 @@ export const validateAndParse = <T>(
     return validData as T;
 };
 
-/**
- * Removes keys starting with '_' from an object (shallow).
- */
-export const stripInternalFields = (data: unknown): unknown => {
-    if (Array.isArray(data)) {
-        return data.map(stripInternalFields);
-    }
-    if (data !== null && typeof data === 'object') {
-        const clean: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-            if (!key.startsWith('_')) {
-                clean[key] = value;
-            }
-        }
-        return clean;
-    }
-    return data;
-};
