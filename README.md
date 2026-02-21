@@ -141,7 +141,7 @@ The test suite covers:
 - **Frontend Hook Tests**: useEntityMutation, useEditorActions, useEntitySelection, useEditorForm.
 - **Component Smoke Tests**: TableEditor, AppSidebar.
 
-**Current Suite**: 412 tests across 44 files.
+**Current Suite**: 415 tests across 44 files.
 
 ## Data Management
 

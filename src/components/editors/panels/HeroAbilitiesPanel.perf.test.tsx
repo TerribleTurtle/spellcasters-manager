@@ -26,7 +26,7 @@ const TestWrapper = ({ initialData }: { initialData?: Record<string, unknown> })
 
 describe('HeroAbilitiesPanel Performance', () => {
     it('should not re-render unrelated ability items when one is modified', async () => {
-        // 1. Setup spy on console.log or similar if we added it, but here we can spy on the component
+
         // Since we can't easily spy on internal component renders without modifying code, 
         // we will trust the structure or use a profiler in e2e. 
         // Ideally, we'd mock React.memo to track calls, but that's complex.
